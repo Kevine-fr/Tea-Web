@@ -1,159 +1,183 @@
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
+import PageBanner from '../components/PageBanner.jsx'
+import AnimatedLeaves from '../components/AnimatedLeaves.jsx'
+import client from '../../api/client.js'
 
-const PRIZES = [
+/* ─── Hook scroll-reveal ──────────────────────────────────── */
+function useReveal(threshold = 0.15) {
+  const [vis, setVis] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVis(true); obs.disconnect() } },
+      { threshold }
+    )
+    if (ref.current) obs.observe(ref.current)
+    return () => obs.disconnect()
+  }, [])
+  return [ref, vis]
+}
+
+/* ─── Données statiques des 3 lots ───────────────────────── */
+const STATIC = [
   {
-    emoji: '🫖',
-    name: 'Infuseur à thé',
-    probability: '60 %',
-    description: 'Un infuseur en inox de qualité supérieure pour préparer vos thés à la perfection.',
-    value: '~15€',
-    color: '#52b788',
+    img:   '/images/Gain/img_01.png',
+    title: 'Lot 1 - Infuseur à thé',
+    lines: [
+      "Ce lot comprend un infuseur à thé réutilisable, pensé pour accompagner la dégustation des thés et infusions Thé Tip Top au quotidien.",
+      "Pratique et simple d'utilisation, il permet de profiter pleinement des arômes des mélanges bio et artisanaux de la marque.",
+    ],
   },
   {
-    emoji: '🍃',
-    name: 'Boîte de thé 100g',
-    probability: '20 %',
-    description: 'Une boîte de 100g d\'un de nos thés signatures, au choix parmi notre collection.',
-    value: '~20€',
-    color: '#d4b44a',
+    img:   '/images/Gain/img_02.png',
+    title: 'Lot 2 - Thé ou infusion (100 g)',
+    lines: [
+      "Ce lot offre une boîte de 100 g de thé ou d'infusion sélectionnée parmi les gammes emblématiques de Thé Tip Top.",
+      "Il permet de découvrir des recettes naturelles, issues d'un savoir-faire artisanal, alliant plaisir de dégustation et bien-être.",
+    ],
   },
   {
-    emoji: '🎀',
-    name: 'Coffret découverte',
-    probability: '15 %',
-    description: 'Un coffret de 5 variétés de thés pour explorer notre gamme premium.',
-    value: '~45€',
-    color: '#e9c46a',
-  },
-  {
-    emoji: '💰',
-    name: 'Remise de 50%',
-    probability: '4 %',
-    description: 'Une remise de 50% sur votre prochain achat en boutique ou en ligne.',
-    value: 'Valeur variable',
-    color: '#2d6a4f',
-  },
-  {
-    emoji: '👑',
-    name: 'Thé à volonté 1 an',
-    probability: '1 %',
-    description: 'Un an de thé offert — recevez chaque mois une sélection de nos meilleurs crus.',
-    value: '~360€',
-    color: '#b8962e',
+    img:   '/images/Gain/img_03.png',
+    title: 'Lot 3 - Coffret découverte',
+    lines: [
+      "Ce lot correspond à un coffret découverte regroupant plusieurs références de thés et d'infusions Thé Tip Top.",
+      "Il a été conçu pour proposer une expérience complète de dégustation et mettre en valeur la diversité des créations de la marque.",
+    ],
   },
 ]
 
+function PrizeCard({ prize, delay = 0 }) {
+  const [ref, vis] = useReveal()
+  return (
+    <div ref={ref} style={{
+      opacity: vis ? 1 : 0,
+      transform: vis ? 'translateY(0)' : 'translateY(40px)',
+      transition: `opacity .6s ease ${delay}s, transform .6s ease ${delay}s`,
+      position: 'relative',
+      paddingTop: 55,
+    }}>
+      {/* Image circulaire qui dépasse en haut */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 100, height: 100,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        border: '3px solid var(--cream-border)',
+        background: 'var(--cream)',
+        zIndex: 2,
+        boxShadow: 'var(--shadow-sm)',
+      }}>
+        <img
+          src={prize.img}
+          alt={prize.title}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={e => { e.target.style.display = 'none' }}
+        />
+      </div>
+
+      {/* Carte */}
+      <div style={{
+        background: 'white',
+        borderRadius: 16,
+        padding: '3rem 1.5rem 1.75rem',
+        border: '1px solid var(--cream-border)',
+        boxShadow: 'var(--shadow-sm)',
+        height: '100%',
+      }}>
+        <h3 style={{ textAlign: 'center', fontSize: '1.05rem', marginBottom: '0.9rem', lineHeight: 1.35 }}>
+          {prize.title}
+        </h3>
+        {prize.lines.map((l, i) => (
+          <p key={i} style={{
+            fontSize: '0.86rem', color: 'var(--text-muted)',
+            lineHeight: 1.75, textAlign: 'justify',
+            marginBottom: i < prize.lines.length - 1 ? '0.75rem' : 0,
+          }}>{l}</p>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function GainPage() {
-  const totalProb = PRIZES.reduce((s, p) => s + parseFloat(p.probability), 0)
+  const [prizes, setPrizes] = useState(STATIC)
+  const [titleRef, titleVis] = useReveal()
+  const [btnRef, btnVis]     = useReveal()
+
+  useEffect(() => {
+    client.get('prizes').then(r => {
+      const api = r.data?.data ?? r.data ?? []
+      if (Array.isArray(api) && api.length > 0) {
+        // Limiter à 3 lots max, utiliser les images statiques
+        const mapped = api.slice(0, 3).map((p, i) => ({
+          img:   STATIC[i]?.img || '/images/Gain/img_01.png',
+          title: p.name,
+          lines: [p.description || STATIC[i]?.lines[0] || ''],
+        }))
+        setPrizes(mapped)
+      }
+    }).catch(() => {})
+  }, [])
 
   return (
     <Layout>
-      <div className="page-hero">
-        <div className="container">
-          <h1>Les Lots à Gagner</h1>
-          <p>100% des participants remportent un lot — à vous de jouer !</p>
-        </div>
-      </div>
+      <PageBanner title="Lot à gagner" />
 
-      {/* Intro */}
-      <section className="section-sm" style={{ background: 'var(--cream)' }}>
-        <div className="container" style={{ textAlign: 'center', maxWidth: 600 }}>
-          <p style={{ fontSize: '1.05rem', lineHeight: 1.75, color: 'var(--text-muted)' }}>
-            Chaque ticket Thé Tip Top est un ticket gagnant. Les lots ont été pensés 
-            pour vous faire découvrir ou redécouvrir l'univers de nos thés d'exception.
-          </p>
-        </div>
-      </section>
+      <section style={{ position: 'relative', background: 'var(--cream)', padding: '3.5rem 1.5rem 5rem', overflow: 'hidden' }}>
+        <AnimatedLeaves />
 
-      {/* Grille des lots */}
-      <section className="section" style={{ background: 'var(--cream-dark)', paddingTop: '1rem' }}>
-        <div className="container">
+        <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 1060 }}>
+
+          {/* Titre */}
+          <div ref={titleRef} style={{
+            opacity: titleVis ? 1 : 0,
+            transform: titleVis ? 'translateY(0)' : 'translateY(30px)',
+            transition: 'opacity .6s ease, transform .6s ease',
+            textAlign: 'center', marginBottom: '0.75rem',
+          }}>
+            <h2>Découvrir les gains</h2>
+          </div>
+          <div style={{
+            opacity: titleVis ? 1 : 0,
+            transition: 'opacity .6s ease .15s',
+            textAlign: 'center', color: 'var(--text-muted)',
+            maxWidth: 820, margin: '0 auto 3.5rem',
+            lineHeight: 1.8, fontSize: '0.92rem',
+          }}>
+            Découvrez les lots et coffrets de thés mis en jeu : une sélection de cadeaux bio et artisanaux,
+            pensés pour prolonger l'expérience Thé Tip Top. Les modalités d'attribution et de remise des gains
+            (boutique ou en ligne) sont précisées dans le règlement.
+          </div>
+
+          {/* Grille 3 lots */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: '1.5rem',
+            alignItems: 'start',
+            marginBottom: '3rem',
           }}>
-            {PRIZES.map(({ emoji, name, probability, description, value, color }) => (
-              <div key={name} className="card" style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}>
-                {/* Accent couleur */}
-                <div style={{
-                  position: 'absolute', top: 0, left: 0, right: 0,
-                  height: 4,
-                  background: color,
-                  borderRadius: 'var(--radius) var(--radius) 0 0',
-                }} />
-
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <div style={{ fontSize: '2.5rem' }}>{emoji}</div>
-                  <span style={{
-                    background: `${color}20`,
-                    color: color,
-                    borderRadius: '20px',
-                    padding: '0.2rem 0.7rem',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                  }}>
-                    {probability}
-                  </span>
-                </div>
-
-                <h3 style={{ marginBottom: '0.6rem', fontSize: '1.15rem' }}>{name}</h3>
-                <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: '1rem' }}>
-                  {description}
-                </p>
-                <div style={{
-                  borderTop: '1px solid var(--cream-border)',
-                  paddingTop: '0.75rem',
-                  fontSize: '0.82rem',
-                  color: 'var(--text-muted)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                }}>
-                  <span>Valeur estimée</span>
-                  <strong style={{ color: 'var(--green-dark)' }}>{value}</strong>
-                </div>
-              </div>
+            {prizes.map((p, i) => (
+              <PrizeCard key={i} prize={p} delay={i * 0.15} />
             ))}
           </div>
 
-          {/* Infos probabilités */}
-          <div className="card" style={{ marginTop: '2.5rem', padding: '1.5rem 2rem' }}>
-            <h4 style={{ marginBottom: '1.25rem' }}>Répartition des lots</h4>
-            {PRIZES.map(({ name, probability, color }) => {
-              const pct = parseFloat(probability)
-              return (
-                <div key={name} style={{ marginBottom: '0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.3rem' }}>
-                    <span>{name}</span>
-                    <strong>{probability}</strong>
-                  </div>
-                  <div style={{ background: 'var(--cream-dark)', borderRadius: 4, height: 8, overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${pct}%`,
-                      background: color,
-                      borderRadius: 4,
-                      transition: 'width 1s ease',
-                    }} />
-                  </div>
-                </div>
-              )
-            })}
+          {/* CTA */}
+          <div ref={btnRef} style={{
+            textAlign: 'center',
+            opacity: btnVis ? 1 : 0,
+            transform: btnVis ? 'translateY(0)' : 'translateY(20px)',
+            transition: 'opacity .5s ease, transform .5s ease',
+          }}>
+            <Link to="/register" className="btn btn-orange" style={{ fontSize: '0.95rem', padding: '0.85rem 2.5rem' }}>
+              Participer au Jeu-Concours
+            </Link>
           </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section style={{ background: 'var(--green-dark)', padding: '4rem 0', textAlign: 'center' }}>
-        <div className="container">
-          <h2 style={{ color: 'white', marginBottom: '0.75rem' }}>Lequel allez-vous gagner ?</h2>
-          <p style={{ color: 'rgba(255,255,255,0.65)', marginBottom: '2rem' }}>
-            Il n'y a qu'une façon de le savoir — entrez votre code !
-          </p>
-          <Link to="/register" className="btn btn-gold" style={{ fontSize: '1rem', padding: '0.85rem 2.5rem' }}>
-            Tenter ma chance →
-          </Link>
         </div>
       </section>
     </Layout>

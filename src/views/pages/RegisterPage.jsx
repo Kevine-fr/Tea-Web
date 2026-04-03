@@ -3,194 +3,162 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../context/AuthContext.jsx'
 import Layout from '../components/Layout.jsx'
-import TeaLogo from '../components/TeaLogo.jsx'
+import PageBanner from '../components/PageBanner.jsx'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
   const { register: registerUser } = useAuth()
   const navigate = useNavigate()
-  const [serverErrors, setServerErrors] = useState({})
+  const [srvErrors, setSrvErrors] = useState({})
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm()
-
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm()
   const password = watch('password')
 
-  async function onSubmit(data) {
-    setServerErrors({})
-    const { password_confirm, ...payload } = data
+  async function onSubmit({ password_confirm, consent, newsletter, ...payload }) {
+    setSrvErrors({})
     try {
       await registerUser(payload)
-      toast.success('Compte créé ! Bienvenue chez Thé Tip Top 🍵')
+      toast.success('Compte créé ! Bienvenue 🍵')
       navigate('/dashboard', { replace: true })
     } catch (err) {
       const resp = err.response?.data
       if (resp?.errors) {
-        // Erreurs de validation Laravel (422)
         const flat = {}
-        Object.entries(resp.errors).forEach(([key, msgs]) => {
-          flat[key] = Array.isArray(msgs) ? msgs[0] : msgs
-        })
-        setServerErrors(flat)
+        Object.entries(resp.errors).forEach(([k, v]) => { flat[k] = Array.isArray(v) ? v[0] : v })
+        setSrvErrors(flat)
       } else {
-        toast.error(resp?.message || 'Erreur lors de l\'inscription.')
+        toast.error(resp?.message || "Erreur lors de l'inscription.")
       }
     }
   }
 
+  const sErr = (name) => errors[name]?.message || srvErrors[name]
+
   return (
     <Layout>
-      <div style={{
-        minHeight: '80vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '3rem 1.5rem',
-        background: 'linear-gradient(135deg, var(--cream) 0%, var(--cream-dark) 100%)',
-      }}>
-        <div style={{ width: '100%', maxWidth: 500 }}>
+      <PageBanner title="Inscription" />
 
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <Link to="/"><TeaLogo size={56} /></Link>
-            <h2 style={{ marginTop: '1rem', marginBottom: '0.4rem' }}>Créer mon compte</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Rejoignez Thé Tip Top et participez au jeu-concours
-            </p>
+      <section style={{ background: 'var(--cream)', padding: '2.5rem 1.5rem 4rem' }}>
+        <div className="container" style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+          <h2>Bienvenue dans l'aventure Thé Tip Top</h2>
+          <p style={{ color: 'var(--text-muted)', maxWidth: 540, margin: '0.5rem auto 0', fontSize: '0.92rem', lineHeight: 1.7 }}>
+            Crée ton compte, tente ta chance et découvre tes lots bien-être et cadeaux de thé bio artisanal.
+          </p>
+        </div>
+
+        <div className="container auth-grid" style={{
+          display: 'grid',
+          gridTemplateColumns: '300px 1fr',
+          gap: '2rem',
+          alignItems: 'start',
+          maxWidth: 920,
+        }}>
+          {/* Side image */}
+          <div className="auth-img-col">
+            <img
+              src="/images/Inscription/img_01.png"
+              alt="Inscription"
+              style={{ width: '100%', height: 450, objectFit: 'cover', borderRadius: 'var(--radius)' }}
+            />
           </div>
 
-          {/* Card */}
+          {/* Form card */}
           <div className="card" style={{ padding: '2.5rem' }}>
+            <h3 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+              Inscrivez-vous au Jeu-concours !
+            </h3>
+
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="form-group">
-                  <label>Prénom</label>
-                  <input
-                    type="text"
-                    placeholder="Jean"
-                    style={errors.first_name || serverErrors.first_name ? { borderColor: 'var(--error)' } : {}}
-                    {...register('first_name', { required: 'Requis' })}
-                  />
-                  {(errors.first_name || serverErrors.first_name) && (
-                    <p className="error-msg">{errors.first_name?.message || serverErrors.first_name}</p>
-                  )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-field">
+                  <input type="text" placeholder="Nom"
+                    className={sErr('last_name') ? 'is-err' : ''}
+                    {...register('last_name', { required: 'Requis' })} />
+                  {sErr('last_name') && <p className="err">{sErr('last_name')}</p>}
                 </div>
-                <div className="form-group">
-                  <label>Nom</label>
-                  <input
-                    type="text"
-                    placeholder="Dupont"
-                    style={errors.last_name || serverErrors.last_name ? { borderColor: 'var(--error)' } : {}}
-                    {...register('last_name', { required: 'Requis' })}
-                  />
-                  {(errors.last_name || serverErrors.last_name) && (
-                    <p className="error-msg">{errors.last_name?.message || serverErrors.last_name}</p>
-                  )}
+                <div className="form-field">
+                  <input type="text" placeholder="Prénom"
+                    className={sErr('first_name') ? 'is-err' : ''}
+                    {...register('first_name', { required: 'Requis' })} />
+                  {sErr('first_name') && <p className="err">{sErr('first_name')}</p>}
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Adresse e-mail</label>
-                <input
-                  type="email"
-                  placeholder="vous@exemple.fr"
-                  autoComplete="email"
-                  style={errors.email || serverErrors.email ? { borderColor: 'var(--error)' } : {}}
+              <div className="form-field">
+                <input type="email" placeholder="Email"
+                  className={sErr('email') ? 'is-err' : ''}
                   {...register('email', {
-                    required: 'L\'e-mail est requis',
+                    required: 'Requis',
                     pattern: { value: /^\S+@\S+\.\S+$/, message: 'E-mail invalide' },
-                  })}
-                />
-                {(errors.email || serverErrors.email) && (
-                  <p className="error-msg">{errors.email?.message || serverErrors.email}</p>
-                )}
+                  })} />
+                {sErr('email') && <p className="err">{sErr('email')}</p>}
               </div>
 
-              <div className="form-group">
-                <label>Date de naissance</label>
-                <input
-                  type="date"
-                  style={errors.birth_date || serverErrors.birth_date ? { borderColor: 'var(--error)' } : {}}
-                  {...register('birth_date', { required: 'Requis' })}
-                />
-                {(errors.birth_date || serverErrors.birth_date) && (
-                  <p className="error-msg">{errors.birth_date?.message || serverErrors.birth_date}</p>
-                )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-field">
+                  <input type="password" placeholder="Mot de passe"
+                    className={sErr('password') ? 'is-err' : ''}
+                    {...register('password', {
+                      required: 'Requis',
+                      minLength: { value: 8, message: 'Min 8 car.' },
+                    })} />
+                  {sErr('password') && <p className="err">{sErr('password')}</p>}
+                </div>
+                <div className="form-field">
+                  <input type="password" placeholder="Confirmez mot de passe"
+                    className={errors.password_confirm ? 'is-err' : ''}
+                    {...register('password_confirm', {
+                      required: 'Requis',
+                      validate: v => v === password || 'Mots de passe différents',
+                    })} />
+                  {errors.password_confirm && <p className="err">{errors.password_confirm.message}</p>}
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>Mot de passe</label>
-                <input
-                  type="password"
-                  placeholder="Minimum 8 caractères"
-                  autoComplete="new-password"
-                  style={errors.password || serverErrors.password ? { borderColor: 'var(--error)' } : {}}
-                  {...register('password', {
-                    required: 'Requis',
-                    minLength: { value: 8, message: 'Minimum 8 caractères' },
-                  })}
-                />
-                {(errors.password || serverErrors.password) && (
-                  <p className="error-msg">{errors.password?.message || serverErrors.password}</p>
-                )}
-              </div>
+              {/* Checkboxes */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.82rem', color: 'var(--text-muted)', cursor: 'pointer', marginBottom: '0.6rem' }}>
+                  <input type="checkbox" style={{ marginTop: 3, accentColor: 'var(--orange)', flexShrink: 0 }}
+                    {...register('consent', { required: 'Vous devez accepter les CGU' })} />
+                  J'accepte les conditions générales d'utilisation et le règlement du jeu *
+                </label>
+                {errors.consent && <p className="err">{errors.consent.message}</p>}
 
-              <div className="form-group">
-                <label>Confirmer le mot de passe</label>
-                <input
-                  type="password"
-                  placeholder="Répétez votre mot de passe"
-                  autoComplete="new-password"
-                  style={errors.password_confirm ? { borderColor: 'var(--error)' } : {}}
-                  {...register('password_confirm', {
-                    required: 'Requis',
-                    validate: (v) => v === password || 'Les mots de passe ne correspondent pas',
-                  })}
-                />
-                {errors.password_confirm && (
-                  <p className="error-msg">{errors.password_confirm.message}</p>
-                )}
-              </div>
-
-              {/* Consentement */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', margin: '1rem 0' }}>
-                <input
-                  id="consent"
-                  type="checkbox"
-                  style={{ marginTop: '3px', accentColor: 'var(--green-mid)', flexShrink: 0 }}
-                  {...register('consent', { required: 'Vous devez accepter les CGU' })}
-                />
-                <label htmlFor="consent" style={{ fontSize: '0.83rem', color: 'var(--text-muted)', fontWeight: 400, textTransform: 'none', letterSpacing: 0, cursor: 'pointer' }}>
-                  J'accepte les{' '}
-                  <Link to="/cgu" target="_blank" style={{ color: 'var(--green-mid)' }}>conditions d'utilisation</Link>
-                  {' '}et la{' '}
-                  <Link to="/politique" target="_blank" style={{ color: 'var(--green-mid)' }}>politique de confidentialité</Link>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.82rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <input type="checkbox" style={{ marginTop: 3, accentColor: 'var(--orange)', flexShrink: 0 }}
+                    {...register('newsletter')} />
+                  J'accepte de recevoir par e-mail les actualités, offres commerciales et newsletters de Thé Tip Top.
                 </label>
               </div>
-              {errors.consent && <p className="error-msg">{errors.consent.message}</p>}
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isSubmitting}
-                style={{ width: '100%', padding: '0.85rem', marginTop: '0.5rem' }}
-              >
-                {isSubmitting ? 'Création du compte…' : 'Créer mon compte'}
+              <button type="submit" className="btn btn-orange" disabled={isSubmitting}
+                style={{ width: '100%', fontSize: '1rem', padding: '0.85rem' }}>
+                {isSubmitting ? 'Création…' : 'Créer mon compte'}
               </button>
-            </form>
 
-            <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-              Déjà un compte ?{' '}
-              <Link to="/login" style={{ color: 'var(--green-mid)', fontWeight: 700 }}>Se connecter</Link>
-            </p>
+              <div style={{ textAlign: 'center', margin: '1rem 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                — ou —
+              </div>
+
+              <button type="button" className="btn btn-outline"
+                style={{ width: '100%', marginBottom: '0.6rem', fontSize: '0.88rem', gap: '0.6rem' }}>
+                <img src="https://www.google.com/favicon.ico" alt="" style={{ width: 16, height: 16 }} />
+                S'inscrire avec Google
+              </button>
+              <button type="button" className="btn btn-outline"
+                style={{ width: '100%', fontSize: '0.88rem', gap: '0.6rem' }}>
+                <span style={{ color: '#1877f2', fontWeight: 900, fontSize: '1rem' }}>f</span>
+                S'inscrire avec Facebook
+              </button>
+
+              <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Déjà un compte ?{' '}
+                <Link to="/login" style={{ color: 'var(--green-mid)', fontWeight: 700 }}>Se connecter</Link>
+              </p>
+            </form>
           </div>
         </div>
-      </div>
+      </section>
     </Layout>
   )
 }

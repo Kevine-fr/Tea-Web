@@ -16,12 +16,8 @@ createRoot(document.getElementById('root')).render(
           fontFamily: "'Lato', sans-serif",
           fontSize: '14px',
         },
-        success: {
-          iconTheme: { primary: '#2d6a4f', secondary: 'white' },
-        },
-        error: {
-          iconTheme: { primary: '#c0392b', secondary: 'white' },
-        },
+        success: { iconTheme: { primary: '#2d5c3e', secondary: '#fff' } },
+        error:   { iconTheme: { primary: '#e8431a', secondary: '#fff' } },
       }}
     />
   </StrictMode>

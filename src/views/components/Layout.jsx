@@ -3,7 +3,7 @@ import Footer from './Footer.jsx'
 
 export default function Layout({ children, noFooter = false }) {
   return (
-    <div className="page-wrapper">
+    <div className="page-wrap">
       <Navbar />
       <main>{children}</main>
       {!noFooter && <Footer />}

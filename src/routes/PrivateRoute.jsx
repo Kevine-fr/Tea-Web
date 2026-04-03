@@ -1,32 +1,49 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../views/context/AuthContext.jsx'
-import LoadingSpinner from '../views/components/LoadingSpinner.jsx'
+
+function Spinner() {
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+      background: 'var(--cream)',
+    }}>
+      <div className="spinner" />
+    </div>
+  )
+}
 
 /**
  * Protège une route — redirige vers /login si non connecté
  */
 export function PrivateRoute({ children }) {
-  const { user, isLoading } = useAuth()
-  const location = useLocation()
+  const { user, loading } = useAuth()
+  const loc = useLocation()
 
-  if (isLoading) return <LoadingSpinner fullPage />
-  if (!user)     return <Navigate to="/login" state={{ from: location }} replace />
+  if (loading) return <Spinner />
+  if (!user)   return <Navigate to="/login" state={{ from: loc }} replace />
   return children
 }
 
 /**
- * Protège une route — redirige si le rôle ne correspond pas
+ * Protège une route — redirige si le rôle n'est pas dans la liste autorisée
  * @param {{ roles: string[], children: React.ReactNode }} props
  */
 export function RoleRoute({ roles, children }) {
-  const { user, isLoading } = useAuth()
-  const location = useLocation()
+  const { user, loading } = useAuth()
+  const loc = useLocation()
 
-  if (isLoading) return <LoadingSpinner fullPage />
-  if (!user)     return <Navigate to="/login" state={{ from: location }} replace />
+  if (loading) return <Spinner />
+  if (!user)   return <Navigate to="/login" state={{ from: loc }} replace />
 
-  if (!roles.includes(user.role?.name)) {
+  // Comparaison insensible à la casse
+  const userRole = (user.role || '').toLowerCase()
+  const allowed  = roles.map(r => r.toLowerCase())
+
+  if (!allowed.includes(userRole)) {
+    // Redirige vers le bon espace selon le rôle
     return <Navigate to="/dashboard" replace />
   }
+
   return children
 }

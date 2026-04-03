@@ -1,92 +1,110 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { authApi } from '../../api/auth.js'
 
-const AuthContext = createContext(null)
+const Ctx = createContext(null)
+
+/** Normalise le rôle en minuscule pour éviter les bugs de casse */
+function normalizeRole(raw) {
+  if (!raw) return null
+  return String(raw).toLowerCase().trim()
+}
+
+/** Normalise un objet user reçu de l'API */
+function normalizeUser(u) {
+  if (!u) return null
+  return { ...u, role: normalizeRole(u.role) }
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser]         = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser]       = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  // ─── Hydrate from localStorage on mount ──────────────────────────────────
+  /* ── Hydratation au montage ────────────────────────────── */
   useEffect(() => {
-    const token    = localStorage.getItem('auth_token')
-    const cached   = localStorage.getItem('auth_user')
+    const token  = localStorage.getItem('ttt_token')
+    if (!token) { setLoading(false); return }
 
-    if (!token) {
-      setIsLoading(false)
-      return
-    }
+    // Pré-remplir depuis le cache (affichage rapide)
+    const cached = localStorage.getItem('ttt_user')
+    if (cached) { try { setUser(normalizeUser(JSON.parse(cached))) } catch {} }
 
-    // Use cached user immediately (fast), then verify with server
-    if (cached) {
-      try { setUser(JSON.parse(cached)) } catch { /* ignore */ }
-    }
-
+    // Vérifier avec le serveur pour avoir les données fraîches + rôle correct
     authApi.me()
-      .then((data) => {
-        const u = data.data ?? data
-        setUser(u)
-        localStorage.setItem('auth_user', JSON.stringify(u))
+      .then((u) => {
+        const normalized = normalizeUser(u)
+        setUser(normalized)
+        localStorage.setItem('ttt_user', JSON.stringify(normalized))
       })
       .catch(() => {
-        // Token invalid — clean up
-        localStorage.removeItem('auth_token')
-        localStorage.removeItem('auth_user')
+        localStorage.removeItem('ttt_token')
+        localStorage.removeItem('ttt_user')
         setUser(null)
       })
-      .finally(() => setIsLoading(false))
+      .finally(() => setLoading(false))
   }, [])
 
-  // ─── Login ────────────────────────────────────────────────────────────────
-  const login = useCallback(async (credentials) => {
-    const data = await authApi.login(credentials)
-    const token = data.token ?? data.access_token ?? data.data?.token
-    const u     = data.user  ?? data.data?.user ?? data.data
+  /* ── Login ─────────────────────────────────────────────── */
+  const login = useCallback(async (creds) => {
+    // Réponse déballée : { user: {...}, token: "..." }
+    const data = await authApi.login(creds)
 
-    if (!token) throw new Error('Token manquant dans la réponse')
+    // Sécurité : si la structure est inattendue on tente les deux formats
+    const rawUser  = data?.user  ?? data
+    const rawToken = data?.token ?? data?.access_token
 
-    localStorage.setItem('auth_token', token)
-    localStorage.setItem('auth_user', JSON.stringify(u))
-    setUser(u)
-    return u
-  }, [])
+    if (!rawToken) throw new Error('Token manquant dans la réponse de connexion')
 
-  // ─── Register ─────────────────────────────────────────────────────────────
-  const register = useCallback(async (formData) => {
-    const data  = await authApi.register(formData)
-    const token = data.token ?? data.access_token ?? data.data?.token
-    const u     = data.user  ?? data.data?.user ?? data.data
-
-    if (token) {
-      localStorage.setItem('auth_token', token)
-      localStorage.setItem('auth_user', JSON.stringify(u))
-      setUser(u)
+    // Appel /me pour s'assurer d'avoir le rôle chargé correctement
+    localStorage.setItem('ttt_token', rawToken)
+    let normalized
+    try {
+      const fresh = await authApi.me()
+      normalized = normalizeUser(fresh)
+    } catch {
+      normalized = normalizeUser(rawUser)
     }
-    return data
+
+    localStorage.setItem('ttt_user', JSON.stringify(normalized))
+    setUser(normalized)
+    return normalized
   }, [])
 
-  // ─── Logout ───────────────────────────────────────────────────────────────
+  /* ── Register ──────────────────────────────────────────── */
+  const register = useCallback(async (body) => {
+    const data     = await authApi.register(body)
+    const rawUser  = data?.user  ?? data
+    const rawToken = data?.token ?? data?.access_token
+    if (rawToken) {
+      localStorage.setItem('ttt_token', rawToken)
+      const normalized = normalizeUser(rawUser)
+      localStorage.setItem('ttt_user', JSON.stringify(normalized))
+      setUser(normalized)
+    }
+    return normalizeUser(rawUser)
+  }, [])
+
+  /* ── Logout ────────────────────────────────────────────── */
   const logout = useCallback(async () => {
-    try { await authApi.logout() } catch { /* ignore */ }
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('auth_user')
+    try { await authApi.logout() } catch {}
+    localStorage.removeItem('ttt_token')
+    localStorage.removeItem('ttt_user')
     setUser(null)
   }, [])
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────
-  const isAdmin    = user?.role?.name === 'admin'
-  const isEmployee = user?.role?.name === 'employee'
-  const isUser     = user?.role?.name === 'user'
+  // user.role est normalisé en minuscule : "admin" | "employee" | "user"
+  const isAdmin    = user?.role === 'admin'
+  const isEmployee = user?.role === 'employee' || user?.role === 'admin'
+  const isUser     = !!user
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, isAdmin, isEmployee, isUser }}>
+    <Ctx.Provider value={{ user, loading, login, register, logout, isAdmin, isEmployee, isUser }}>
       {children}
-    </AuthContext.Provider>
+    </Ctx.Provider>
   )
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>')
+export const useAuth = () => {
+  const ctx = useContext(Ctx)
+  if (!ctx) throw new Error('useAuth must be inside AuthProvider')
   return ctx
 }

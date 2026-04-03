@@ -3,126 +3,146 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../context/AuthContext.jsx'
 import Layout from '../components/Layout.jsx'
-import TeaLogo from '../components/TeaLogo.jsx'
+import PageBanner from '../components/PageBanner.jsx'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
-  const from      = location.state?.from?.pathname || '/dashboard'
+  const from      = location.state?.from?.pathname
+  const [srvErr, setSrvErr] = useState('')
 
-  const [serverError, setServerError] = useState('')
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm()
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm()
 
   async function onSubmit(data) {
-    setServerError('')
+    setSrvErr('')
     try {
       const user = await login(data)
-      toast.success(`Bienvenue${user?.email ? ', ' + user.email : ''} !`)
-      // Redirection selon le rôle
-      const role = user?.role?.name
-      if      (role === 'admin')    navigate('/admin',    { replace: true })
-      else if (role === 'employee') navigate('/employee', { replace: true })
-      else                         navigate(from,         { replace: true })
+      toast.success('Bienvenue !')
+
+      const role = user?.role
+
+      // Admins et employés → toujours vers /admin, quelle que soit l'origine
+      if (role === 'admin' || role === 'employee') {
+        navigate('/admin', { replace: true })
+        return
+      }
+
+      // Utilisateurs normaux → retour à la page d'origine si pertinente,
+      // sinon dashboard
+      const safePaths = ['/dashboard', '/mes-gains', '/profil', '/gains', '/jeu', '/contact']
+      if (from && safePaths.some(p => from.startsWith(p))) {
+        navigate(from, { replace: true })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data?.error || 'Identifiants incorrects.'
-      setServerError(msg)
+      setSrvErr(err.response?.data?.message || 'Identifiants incorrects.')
     }
   }
 
   return (
     <Layout>
-      <div style={{
-        minHeight: '80vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '3rem 1.5rem',
-        background: 'linear-gradient(135deg, var(--cream) 0%, var(--cream-dark) 100%)',
-      }}>
-        <div style={{ width: '100%', maxWidth: 440 }}>
+      <PageBanner title="Connexion" />
 
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <Link to="/">
-              <TeaLogo size={56} />
-            </Link>
-            <h2 style={{ marginTop: '1rem', marginBottom: '0.4rem' }}>Bon retour !</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Connectez-vous pour accéder à votre espace
-            </p>
-          </div>
+      <section style={{ background: 'var(--cream)', padding: '2.5rem 1.5rem 4rem' }}>
+        <div className="container" style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+          <h2 style={{ marginBottom: '0.5rem' }}>Pause Thé !</h2>
+          <p style={{ color: 'var(--text-muted)', maxWidth: 540, margin: '0 auto', fontSize: '0.92rem', lineHeight: 1.7 }}>
+            Connecte-toi pour consulter tes lots, suivre tes gains et découvrir quel coffret de thé bio artisanal t'attend.
+          </p>
+        </div>
 
-          {/* Card */}
+        <div className="container auth-grid" style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 340px',
+          gap: '2rem',
+          alignItems: 'start',
+          maxWidth: 900,
+        }}>
+          {/* ── Formulaire ── */}
           <div className="card" style={{ padding: '2.5rem' }}>
-            {serverError && (
-              <div className="alert alert-error">{serverError}</div>
-            )}
+            <h3 style={{ textAlign: 'center', marginBottom: '1.75rem', fontSize: '1.1rem' }}>
+              Formulaire de connexion
+            </h3>
+
+            {srvErr && <div className="alert alert-err">{srvErr}</div>}
 
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
-              <div className="form-group">
-                <label htmlFor="email">Adresse e-mail</label>
+              <div className="form-field">
+                <label>Identifiant</label>
                 <input
-                  id="email"
                   type="email"
-                  placeholder="vous@exemple.fr"
+                  placeholder="Votre mail.."
                   autoComplete="email"
-                  style={errors.email ? { borderColor: 'var(--error)' } : {}}
+                  className={errors.email ? 'is-err' : ''}
                   {...register('email', {
-                    required: 'L\'e-mail est requis',
+                    required: 'Requis',
                     pattern: { value: /^\S+@\S+\.\S+$/, message: 'E-mail invalide' },
                   })}
                 />
-                {errors.email && <p className="error-msg">{errors.email.message}</p>}
+                {errors.email && <p className="err">{errors.email.message}</p>}
               </div>
 
-              <div className="form-group">
-                <label htmlFor="password">Mot de passe</label>
+              <div className="form-field">
+                <label>Mot de passe</label>
                 <input
-                  id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="Mot de passe.."
                   autoComplete="current-password"
-                  style={errors.password ? { borderColor: 'var(--error)' } : {}}
+                  className={errors.password ? 'is-err' : ''}
                   {...register('password', {
-                    required: 'Le mot de passe est requis',
-                    minLength: { value: 8, message: 'Minimum 8 caractères' },
+                    required: 'Requis',
+                    minLength: { value: 8, message: 'Min 8 caractères' },
                   })}
                 />
-                {errors.password && <p className="error-msg">{errors.password.message}</p>}
+                {errors.password && <p className="err">{errors.password.message}</p>}
               </div>
+
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+                Vous n'avez pas de compte ?{' '}
+                <Link to="/register" style={{ color: 'var(--green-mid)', fontWeight: 700 }}>
+                  S'inscrire
+                </Link>
+              </p>
 
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="btn btn-orange"
                 disabled={isSubmitting}
-                style={{ width: '100%', marginTop: '0.5rem', padding: '0.85rem' }}
+                style={{ width: '100%', fontSize: '1rem', padding: '0.85rem' }}
               >
                 {isSubmitting ? 'Connexion…' : 'Se connecter'}
               </button>
-            </form>
 
-            <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-              Pas encore de compte ?{' '}
-              <Link to="/register" style={{ color: 'var(--green-mid)', fontWeight: 700 }}>
-                S'inscrire
-              </Link>
-            </p>
+              <div style={{ textAlign: 'center', margin: '1rem 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                — ou —
+              </div>
+
+              <button type="button" className="btn btn-outline"
+                style={{ width: '100%', marginBottom: '0.6rem', fontSize: '0.88rem', gap: '0.6rem' }}>
+                <img src="https://www.google.com/favicon.ico" alt="" style={{ width: 16, height: 16 }} />
+                Se connecter avec Google
+              </button>
+              <button type="button" className="btn btn-outline"
+                style={{ width: '100%', fontSize: '0.88rem', gap: '0.6rem' }}>
+                <span style={{ color: '#1877f2', fontWeight: 900, fontSize: '1rem' }}>f</span>
+                Se connecter avec Facebook
+              </button>
+            </form>
           </div>
 
-          <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            <Link to="/politique" style={{ color: 'var(--text-muted)' }}>Politique de confidentialité</Link>
-            {' · '}
-            <Link to="/cgv" style={{ color: 'var(--text-muted)' }}>CGV</Link>
-          </p>
+          {/* ── Image latérale ── */}
+          <div className="auth-img-col">
+            <img
+              src="/images/Connexion/img_01.png"
+              alt="Thé Tip Top"
+              style={{ width: '100%', height: 420, objectFit: 'cover', borderRadius: 'var(--radius)' }}
+            />
+          </div>
         </div>
-      </div>
+      </section>
     </Layout>
   )
 }

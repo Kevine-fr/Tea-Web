@@ -1,255 +1,477 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { adminApi } from '../../api/admin.js'
-import Layout from '../components/Layout.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import toast from 'react-hot-toast'
 
-const TABS = ['Tableau de bord', 'Participations', 'Utilisateurs', 'Rachat de lots']
+const TABS = ['Dashboard', 'Tickets & Gains', 'Utilisateurs & droits']
 
-export default function AdminPage() {
-  const { logout } = useAuth()
-  const [activeTab, setActiveTab] = useState(0)
-  const [stats, setStats]         = useState(null)
-  const [participations, setParticipations] = useState([])
-  const [users, setUsers]         = useState([])
-  const [redemptions, setRedemptions] = useState([])
-  const [loading, setLoading]     = useState(true)
+/* ─── Modal générique ──────────────────────────────────── */
+function Modal({ title, fields, onClose, onSubmit, submitLabel = 'Mettre à jour' }) {
+  const [vals, setVals] = useState(
+    Object.fromEntries(fields.map(f => [f.name, f.defaultValue || '']))
+  )
+  const set = (k, v) => setVals(p => ({ ...p, [k]: v }))
 
-  useEffect(() => {
-    loadAll()
-  }, [])
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        <h3>{title}</h3>
+        {fields.map(f => (
+          <div className="form-field" key={f.name}>
+            <label>{f.label}</label>
+            {f.type === 'select' ? (
+              <select value={vals[f.name]} onChange={e => set(f.name, e.target.value)}
+                style={{ borderRadius: 'var(--radius-pill)' }}>
+                {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            ) : (
+              <input type={f.type || 'text'} value={vals[f.name]}
+                onChange={e => set(f.name, e.target.value)} placeholder={f.placeholder || f.label} />
+            )}
+          </div>
+        ))}
+        <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+          <button className="btn btn-orange" style={{ width: '100%' }}
+            onClick={() => onSubmit(vals)}>
+            {submitLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
-  async function loadAll() {
-    setLoading(true)
+/* ─── Dashboard tab ────────────────────────────────────── */
+function DashboardTab({ stats, participations }) {
+  const won   = (participations || []).filter(p => p.prize_id).length
+  const total = (participations || []).length
+
+  const prizes = {}
+  ;(participations || []).forEach(p => {
+    if (p.prize?.name) prizes[p.prize.name] = (prizes[p.prize.name] || 0) + 1
+  })
+  const prizeNames  = Object.keys(prizes)
+  const prizeColors = ['#1a3c2e', '#f0ebe0', '#e8431a']
+
+  return (
+    <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 280px', gap: '1.5rem', alignItems: 'start' }}>
+      <div>
+        {/* Donut chart */}
+        <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
+          <h3 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.1rem' }}>Répartition des gains</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+            <div style={{ position: 'relative', width: 160, height: 160, flexShrink: 0 }}>
+              <svg viewBox="0 0 36 36" style={{ width: 160, height: 160, transform: 'rotate(-90deg)' }}>
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f0ebe0" strokeWidth="3.8" />
+                {prizeNames.length === 0 ? (
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2d9c8" strokeWidth="3.8" />
+                ) : (() => {
+                  let offset = 0
+                  return prizeNames.map((name, i) => {
+                    const pct = Math.round((prizes[name] / total) * 100)
+                    const dash = (pct / 100) * 100
+                    const el = (
+                      <circle key={name} cx="18" cy="18" r="15.9" fill="none"
+                        stroke={prizeColors[i % prizeColors.length]} strokeWidth="3.8"
+                        strokeDasharray={`${dash} ${100 - dash}`}
+                        strokeDashoffset={-offset} />
+                    )
+                    offset += dash
+                    return el
+                  })
+                })()}
+              </svg>
+            </div>
+            <div>
+              {prizeNames.map((name, i) => (
+                <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem', fontSize: '0.88rem' }}>
+                  <span style={{ width: 12, height: 12, borderRadius: '50%', background: prizeColors[i % prizeColors.length], display: 'inline-block', flexShrink: 0 }} />
+                  <span>{name}</span>
+                </div>
+              ))}
+              {prizeNames.length === 0 && (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>Aucune donnée</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Bar chart */}
+        <div className="card" style={{ padding: '2rem' }}>
+          <h3 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.1rem' }}>Courbes : Tickets utilisés par jour</h3>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1.5rem', height: 120, paddingBottom: '0.5rem', borderBottom: '1px solid var(--cream-border)' }}>
+            {[30, 50, 45, 60].map((h, i) => (
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{h}</span>
+                <div style={{ width: '100%', background: 'var(--green-dark)', borderRadius: '4px 4px 0 0', height: `${(h / 60) * 100}px` }} />
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{`0${i+1}/04`}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Alertes */}
+      <div>
+        <div style={{ background: 'var(--green-dark)', color: 'white', borderRadius: 'var(--radius-sm)', padding: '0.85rem 1.25rem', marginBottom: '1rem', fontWeight: 700, textAlign: 'center' }}>
+          Alertes
+        </div>
+        {stats?.low_stock_prizes?.length > 0 ? stats.low_stock_prizes.map(p => (
+          <div key={p.id} className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem' }}>
+            <span style={{ color: 'var(--orange)', fontSize: '1.1rem' }}>⚠</span>
+            <span style={{ fontSize: '0.85rem' }}>Stock {p.name} faible</span>
+          </div>
+        )) : (
+          <div className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span style={{ color: 'var(--orange)', fontSize: '1.1rem' }}>⚠</span>
+            <span style={{ fontSize: '0.85rem' }}>Stock lot 2 faible</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Tickets & Gains tab ──────────────────────────────── */
+function TicketsTab({ participations, onRefresh }) {
+  const [modal, setModal]   = useState(null)  // { id, prize, status }
+  const [search, setSearch] = useState('')
+
+  const filtered = (participations || []).filter(p => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      (p.ticket_code_id || '').toLowerCase().includes(q) ||
+      (p.user?.last_name  || '').toLowerCase().includes(q) ||
+      (p.user?.first_name || '').toLowerCase().includes(q) ||
+      (p.user?.email      || '').toLowerCase().includes(q)
+    )
+  })
+
+  async function handleUpdate(vals) {
     try {
-      const [s, p, u, r] = await Promise.allSettled([
-        adminApi.stats(),
-        adminApi.participations(),
-        adminApi.users(),
-        adminApi.redemptions(),
-      ])
-      if (s.status === 'fulfilled') setStats(s.value.data ?? s.value)
-      if (p.status === 'fulfilled') setParticipations(p.value.data ?? p.value ?? [])
-      if (u.status === 'fulfilled') setUsers(u.value.data ?? u.value ?? [])
-      if (r.status === 'fulfilled') setRedemptions(r.value.data ?? r.value ?? [])
-    } catch { /* errors handled by client interceptor */ }
-    finally { setLoading(false) }
-  }
-
-  async function handleRedemption(id, status) {
-    try {
-      await adminApi.updateRedemption(id, { status })
-      toast.success(`Demande ${status === 'approved' ? 'approuvée' : 'refusée'}.`)
-      const updated = await adminApi.redemptions()
-      setRedemptions(updated.data ?? updated ?? [])
+      await adminApi.updateRedemption(modal.redemptionId, vals.status)
+      toast.success('Statut mis à jour.')
+      setModal(null)
+      onRefresh()
     } catch {
       toast.error('Erreur lors de la mise à jour.')
     }
   }
 
+  const exportCSV = () => {
+    const rows = [['N° Ticket', 'Nom', 'Prénom', 'Mail', 'Lot', 'Statut']]
+    filtered.forEach(p => {
+      rows.push([
+        p.ticket_code_id ?? '',
+        p.user?.last_name ?? '', p.user?.first_name ?? '',
+        p.user?.email ?? '',
+        p.prize?.name ?? '',
+        p.redemption?.status ?? '',
+      ])
+    })
+    const csv = rows.map(r => r.join(',')).join('\n')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    a.download = 'gains.csv'
+    a.click()
+  }
+
   return (
-    <Layout>
-      <div style={{ background: 'var(--cream)', minHeight: '80vh' }}>
+    <div style={{ padding: '2rem' }}>
+      <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.3rem' }}>Suivi de mes gains</h2>
 
-        {/* ── Header ─────────────────────────────────────────────── */}
-        <div style={{ background: 'var(--green-dark)', padding: '2rem 0' }}>
-          <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Administration</p>
-              <h2 style={{ color: 'white', margin: 0 }}>Tableau de bord</h2>
-            </div>
-            <button onClick={logout} style={{
-              background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)',
-              color: 'rgba(255,255,255,.7)', padding: '0.5rem 1.2rem', borderRadius: '6px',
-              cursor: 'pointer', fontSize: '0.85rem',
-            }}>
-              Déconnexion
-            </button>
-          </div>
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+          Aucune participation trouvée.
         </div>
+      ) : (
+        <div className="card" style={{ overflow: 'auto' }}>
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>N° Ticket</th><th>Nom</th><th>Prénom</th><th>Mail</th>
+                <th>Lot</th><th>Date limite</th><th>Statut</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(p => {
+                const deadline = p.participation_date
+                  ? new Date(new Date(p.participation_date).getTime() + 60*24*60*60*1000).toLocaleDateString('fr-FR')
+                  : '—'
+                const status = p.redemption?.status
+                const statusLabel = {
+                  pending: 'En attente', approved: 'Disponible en boutique',
+                  completed: 'Remis', rejected: 'Refusé',
+                }[status] || (p.prize_id ? 'En préparation' : '—')
 
-        {/* ── Tabs ───────────────────────────────────────────────── */}
-        <div style={{ background: 'white', borderBottom: '1px solid var(--cream-border)' }}>
-          <div className="container" style={{ display: 'flex', gap: 0 }}>
-            {TABS.map((tab, i) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(i)}
-                style={{
-                  padding: '1rem 1.5rem',
-                  border: 'none',
-                  background: 'none',
-                  fontSize: '0.9rem',
-                  fontWeight: activeTab === i ? 700 : 400,
-                  color: activeTab === i ? 'var(--green-mid)' : 'var(--text-muted)',
-                  borderBottom: activeTab === i ? '2px solid var(--green-mid)' : '2px solid transparent',
-                  cursor: 'pointer',
-                  transition: 'var(--transition)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+                return (
+                  <tr key={p.id}>
+                    <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{p.ticket_code_id ?? '—'}</td>
+                    <td>{p.user?.last_name  ?? '—'}</td>
+                    <td>{p.user?.first_name ?? '—'}</td>
+                    <td style={{ fontSize: '0.83rem' }}>{p.user?.email ?? '—'}</td>
+                    <td>{p.prize?.name ?? '—'}</td>
+                    <td>{deadline}</td>
+                    <td>{statusLabel}</td>
+                    <td>
+                      {p.redemption && (
+                        <button className="btn btn-orange"
+                          style={{ padding: '0.3rem 0.85rem', fontSize: '0.78rem' }}
+                          onClick={() => setModal({ id: p.id, redemptionId: p.redemption.id, prize: p.prize?.name, status: p.redemption.status })}>
+                          MAJ
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
+      )}
 
-        {/* ── Content ────────────────────────────────────────────── */}
-        <div className="container" style={{ padding: '2.5rem 1.5rem' }}>
-          {loading ? <LoadingSpinner /> : (
-            <>
-              {/* ── Stats ────────────────────────────────── */}
-              {activeTab === 0 && (
-                <div>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '1.25rem',
-                    marginBottom: '2rem',
-                  }}>
-                    {[
-                      { icon: '🎫', label: 'Participations totales', val: stats?.total_participations ?? participations.length },
-                      { icon: '🏆', label: 'Lots gagnés',            val: stats?.total_wins          ?? participations.filter(p => p.has_won).length },
-                      { icon: '👥', label: 'Utilisateurs inscrits',  val: stats?.total_users         ?? users.length },
-                      { icon: '🔄', label: 'Rachats en attente',     val: stats?.pending_redemptions ?? redemptions.filter(r => r.status === 'pending').length },
-                    ].map(({ icon, label, val }) => (
-                      <div key={label} className="card" style={{ textAlign: 'center', padding: '1.75rem' }}>
-                        <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{icon}</div>
-                        <div style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', fontWeight: 700, color: 'var(--green-dark)' }}>{val}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{label}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Taux de gains */}
-                  {stats?.win_rate !== undefined && (
-                    <div className="card" style={{ padding: '1.5rem' }}>
-                      <h4 style={{ marginBottom: '1rem' }}>Taux de participation</h4>
-                      <div style={{ background: 'var(--cream-dark)', borderRadius: '6px', height: 12, overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%',
-                          width: `${Math.min(stats.win_rate, 100)}%`,
-                          background: 'var(--green-mid)',
-                          borderRadius: '6px',
-                          transition: 'width 1s ease',
-                        }} />
-                      </div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                        {stats.win_rate}% des tickets ont été joués
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ── Participations ───────────────────────── */}
-              {activeTab === 1 && (
-                <DataTable
-                  data={participations}
-                  columns={[
-                    { key: 'ticket_code.code',    label: 'Code ticket', render: p => <code>{p.ticket_code?.code ?? '—'}</code> },
-                    { key: 'user.email',           label: 'Utilisateur', render: p => <span style={{ fontSize: '0.85rem' }}>{p.user?.email ?? '—'}</span> },
-                    { key: 'participation_date',   label: 'Date',        render: p => new Date(p.participation_date).toLocaleDateString('fr-FR') },
-                    { key: 'has_won',              label: 'Résultat',    render: p => p.has_won
-                      ? <span className="badge badge-gold">🏆 Gagné</span>
-                      : <span className="badge" style={{ background: 'var(--cream-dark)', color: 'var(--text-muted)' }}>Perdu</span>
-                    },
-                    { key: 'prize.name',           label: 'Lot',         render: p => p.prize?.name ?? '—' },
-                  ]}
-                  emptyMsg="Aucune participation enregistrée."
-                />
-              )}
-
-              {/* ── Utilisateurs ─────────────────────────── */}
-              {activeTab === 2 && (
-                <DataTable
-                  data={users}
-                  columns={[
-                    { key: 'email',      label: 'E-mail',        render: u => u.email },
-                    { key: 'first_name', label: 'Prénom',        render: u => u.first_name ?? '—' },
-                    { key: 'last_name',  label: 'Nom',           render: u => u.last_name  ?? '—' },
-                    { key: 'role.name',  label: 'Rôle',          render: u => <span className="badge badge-green">{u.role?.name ?? 'user'}</span> },
-                    { key: 'created_at', label: 'Inscrit le',    render: u => new Date(u.created_at).toLocaleDateString('fr-FR') },
-                  ]}
-                  emptyMsg="Aucun utilisateur."
-                />
-              )}
-
-              {/* ── Rachats ──────────────────────────────── */}
-              {activeTab === 3 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {redemptions.length === 0 ? (
-                    <p style={{ color: 'var(--text-muted)', padding: '2rem', textAlign: 'center' }}>Aucune demande de rachat.</p>
-                  ) : redemptions.map(r => (
-                    <div key={r.id} className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                          {r.participation?.user?.email ?? '—'}
-                        </div>
-                        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                          Lot : {r.participation?.prize?.name ?? '—'} · Méthode : {r.method} · {new Date(r.requested_at).toLocaleDateString('fr-FR')}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span className={`badge badge-${r.status === 'pending' ? 'pending' : r.status === 'approved' ? 'green' : 'error'}`}>
-                          {r.status === 'pending' ? 'En attente' : r.status === 'approved' ? 'Approuvé' : 'Refusé'}
-                        </span>
-                        {r.status === 'pending' && (
-                          <>
-                            <button className="btn btn-primary" style={{ padding: '0.35rem 0.9rem', fontSize: '0.8rem' }}
-                              onClick={() => handleRedemption(r.id, 'approved')}>✓ Approuver</button>
-                            <button className="btn" style={{ padding: '0.35rem 0.9rem', fontSize: '0.8rem', background: 'rgba(192,57,43,.1)', color: 'var(--error)', border: '1px solid rgba(192,57,43,.2)' }}
-                              onClick={() => handleRedemption(r.id, 'rejected')}>✕ Refuser</button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </Layout>
+      {modal && (
+        <Modal
+          title="Mettre à jour le statut du lot"
+          fields={[
+            { name: 'lot',    label: 'Lot',    defaultValue: modal.prize ?? '' },
+            { name: 'status', label: 'Statut', type: 'select', defaultValue: modal.status,
+              options: [
+                { value: 'pending',   label: 'En attente' },
+                { value: 'approved',  label: 'Disponible en boutique' },
+                { value: 'completed', label: 'Remis' },
+                { value: 'rejected',  label: 'Refusé' },
+              ]
+            },
+          ]}
+          onClose={() => setModal(null)}
+          onSubmit={handleUpdate}
+          submitLabel="Mettre à jour"
+        />
+      )}
+    </div>
   )
 }
 
-// ── Composant table réutilisable ───────────────────────────────────────────────
-function DataTable({ data, columns, emptyMsg }) {
-  if (data.length === 0) {
-    return <p style={{ color: 'var(--text-muted)', padding: '2rem', textAlign: 'center' }}>{emptyMsg}</p>
+/* ─── Users tab ────────────────────────────────────────── */
+function UsersTab({ users, onRefresh }) {
+  const [modal, setModal]  = useState(null)  // null | 'add' | user object
+  const [search, setSearch] = useState('')
+
+  const filtered = (users || []).filter(u => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      (u.last_name  || '').toLowerCase().includes(q) ||
+      (u.first_name || '').toLowerCase().includes(q) ||
+      (u.email      || '').toLowerCase().includes(q)
+    )
+  })
+
+  async function handleUpdate(vals) {
+    try {
+      // PUT /admin/users/{id} — endpoint à adapter selon votre API
+      await import('../../api/client.js').then(m =>
+        m.default.put(`admin/users/${modal.id}`, vals)
+      )
+      toast.success('Utilisateur mis à jour.')
+      setModal(null)
+      onRefresh()
+    } catch {
+      toast.error('Erreur lors de la mise à jour.')
+    }
   }
+
+  async function handleAdd(vals) {
+    try {
+      await import('../../api/client.js').then(m =>
+        m.default.post('admin/users', vals)
+      )
+      toast.success('Utilisateur ajouté.')
+      setModal(null)
+      onRefresh()
+    } catch {
+      toast.error('Erreur lors de l\'ajout.')
+    }
+  }
+
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
-        <thead>
-          <tr style={{ background: 'var(--cream-dark)' }}>
-            {columns.map(c => (
-              <th key={c.key} style={{
-                padding: '0.75rem 1rem', textAlign: 'left',
-                fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.05em',
-                textTransform: 'uppercase', color: 'var(--green-dark)',
-                borderBottom: '2px solid var(--cream-border)',
-              }}>
-                {c.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row, i) => (
-            <tr key={row.id ?? i} style={{ borderBottom: '1px solid var(--cream-border)', background: i % 2 === 0 ? 'white' : 'var(--cream)' }}>
-              {columns.map(c => (
-                <td key={c.key} style={{ padding: '0.75rem 1rem', verticalAlign: 'middle' }}>
-                  {c.render(row)}
-                </td>
+    <div style={{ padding: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.3rem' }}>Utilisateurs & droits</h2>
+        <button className="btn btn-orange" style={{ fontSize: '0.88rem' }}
+          onClick={() => setModal('add')}>
+          Ajouter un utilisateur
+        </button>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Aucun utilisateur.</div>
+      ) : (
+        <div className="card" style={{ overflow: 'auto' }}>
+          <table className="tbl">
+            <thead>
+              <tr><th>Nom</th><th>Prénom</th><th>Mail</th><th>Droit</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              {filtered.map(u => (
+                <tr key={u.id}>
+                  <td>{u.last_name  ?? '—'}</td>
+                  <td>{u.first_name ?? '—'}</td>
+                  <td style={{ fontSize: '0.85rem' }}>{u.email}</td>
+                  <td>
+                    <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>
+                      {{ admin: 'Admin', employee: 'Editeur', user: 'Utilisateur' }[u.role] || u.role}
+                    </span>
+                  </td>
+                  <td>
+                    <button className="btn btn-orange"
+                      style={{ padding: '0.3rem 0.85rem', fontSize: '0.78rem' }}
+                      onClick={() => setModal(u)}>
+                      MAJ
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Update modal */}
+      {modal && modal !== 'add' && (
+        <Modal
+          title="Mettre à jour l'utilisateur"
+          fields={[
+            { name: 'last_name',  label: 'Nom',    defaultValue: modal.last_name  || '' },
+            { name: 'first_name', label: 'Prenom', defaultValue: modal.first_name || '' },
+            { name: 'email',      label: 'Mail',   defaultValue: modal.email      || '', type: 'email' },
+            { name: 'role',       label: 'Role',   type: 'select', defaultValue: modal.role || 'user',
+              options: [
+                { value: 'user', label: 'Utilisateur' },
+                { value: 'employee', label: 'Editeur' },
+                { value: 'admin', label: 'Admin' },
+              ]
+            },
+          ]}
+          onClose={() => setModal(null)}
+          onSubmit={handleUpdate}
+          submitLabel="Mettre à jour"
+        />
+      )}
+
+      {/* Add modal */}
+      {modal === 'add' && (
+        <Modal
+          title="Ajout utilisateur"
+          fields={[
+            { name: 'last_name',  label: 'Nom' },
+            { name: 'first_name', label: 'Prenom' },
+            { name: 'email',      label: 'Mail', type: 'email' },
+            { name: 'role',       label: 'Role', type: 'select', defaultValue: 'user',
+              options: [
+                { value: 'user', label: 'Utilisateur' },
+                { value: 'employee', label: 'Editeur' },
+                { value: 'admin', label: 'Admin' },
+              ]
+            },
+          ]}
+          onClose={() => setModal(null)}
+          onSubmit={handleAdd}
+          submitLabel="Ajouter l'utilisateur"
+        />
+      )}
+    </div>
+  )
+}
+
+/* ─── Page principale Admin ────────────────────────────── */
+export default function AdminPage() {
+  const { user, logout } = useAuth()
+  const [tab, setTab]               = useState(0)
+  const [stats, setStats]           = useState(null)
+  const [participations, setPartic] = useState([])
+  const [users, setUsers]           = useState([])
+  const [search, setSearch]         = useState('')
+  const [loading, setLoading]       = useState(true)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [s, p, u] = await Promise.allSettled([
+        adminApi.stats(),
+        adminApi.participations(),
+        import('../../api/client.js').then(m => m.default.get('admin/users').then(r => r.data)),
+      ])
+      if (s.status === 'fulfilled') setStats(s.value)
+      if (p.status === 'fulfilled') setPartic(p.value.data ?? p.value ?? [])
+      if (u.status === 'fulfilled') setUsers(u.value.data ?? u.value ?? [])
+    } catch {}
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  return (
+    <div className="admin-wrap">
+      {/* ── Sidebar ───────────────────────────────────── */}
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar-logo">
+          <img src="/images/Footer/img_01.png" alt="Thé Tip Top"
+            style={{ width: 100, margin: '0 auto', filter: 'brightness(1.1)' }} />
+        </div>
+        {TABS.map((t, i) => (
+          <button key={t} className={`admin-nav-item ${tab === i ? 'active' : ''}`}
+            onClick={() => setTab(i)}>
+            {t}
+          </button>
+        ))}
+      </aside>
+
+      {/* ── Main ──────────────────────────────────────── */}
+      <div className="admin-main">
+        {/* Topbar */}
+        <div className="admin-topbar">
+          <div className="admin-search-wrap">
+            <span className="admin-search-icon">🔍</span>
+            <input
+              className="admin-search"
+              placeholder="Rechercher : N° Ticket, Nom, Prénom..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <button className="btn btn-orange" style={{ fontSize: '0.85rem', padding: '0.55rem 1.25rem' }}
+            onClick={() => {}}>
+            Rechercher
+          </button>
+          <button className="btn btn-orange" style={{ fontSize: '0.85rem', padding: '0.55rem 1.25rem' }}>
+            Exporter CSV
+          </button>
+        </div>
+
+        {/* Content */}
+        {loading ? <LoadingSpinner /> : (
+          <>
+            {tab === 0 && <DashboardTab stats={stats} participations={participations} />}
+            {tab === 1 && <TicketsTab   participations={participations.filter(p => {
+              if (!search) return true
+              const q = search.toLowerCase()
+              return (p.ticket_code_id||'').toLowerCase().includes(q) ||
+                     (p.user?.last_name||'').toLowerCase().includes(q) ||
+                     (p.user?.email||'').toLowerCase().includes(q)
+            })} onRefresh={load} />}
+            {tab === 2 && <UsersTab users={users.filter(u => {
+              if (!search) return true
+              const q = search.toLowerCase()
+              return (u.last_name||'').toLowerCase().includes(q) ||
+                     (u.email||'').toLowerCase().includes(q)
+            })} onRefresh={load} />}
+          </>
+        )}
+      </div>
     </div>
   )
 }
