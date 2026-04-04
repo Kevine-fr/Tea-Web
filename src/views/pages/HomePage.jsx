@@ -62,8 +62,8 @@ function StepCard({ n, img, label, visible, delay, isMobile }) {
       style={{
         position: 'relative',
         paddingTop: 22,
-        width: isMobile ? '100%' : 220,
-        maxWidth: isMobile ? 320 : 220,
+        width: isMobile ? '100%' : 350,
+        maxWidth: isMobile ? 320 : 350,
         flexShrink: 0,
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(40px)',
@@ -103,7 +103,7 @@ function StepCard({ n, img, label, visible, delay, isMobile }) {
         <div
           style={{
             background: '#EEE1CE',
-            padding: isMobile ? '1.5rem 1rem 1.2rem' : '1.75rem 1rem 1.4rem',
+            padding: isMobile ? '1.5rem 1rem 1.2rem' : '0rem 1rem 0rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -113,8 +113,8 @@ function StepCard({ n, img, label, visible, delay, isMobile }) {
             src={img}
             alt={label}
             style={{
-              width: isMobile ? 56 : 68,
-              height: isMobile ? 56 : 68,
+              width: isMobile ? 56 : 150,
+              height: isMobile ? 56 : 150,
               objectFit: 'contain',
               display: 'block',
             }}
@@ -199,7 +199,7 @@ export default function HomePage() {
             alt=""
             style={{
               position: 'absolute',
-              right: '0%',
+              right: '5%',
               top: '-30%',
               width: isMobile ? '50%' : 'auto',
               zIndex: 1,
@@ -213,7 +213,7 @@ export default function HomePage() {
             alt=""
             style={{
               position: 'absolute',
-              right: isMobile ? '0%' : '15%',
+              right: isMobile ? '5%' : '20%',
               bottom: '-30%',
               width: isMobile ? '50%' : 'auto',
               zIndex: 1,
@@ -226,7 +226,7 @@ export default function HomePage() {
             style={{
               zIndex: 2,
               padding: isMobile ? '2rem 1.25rem' : '3.5rem 2rem',
-              margin: isMobile ? '1.25rem 1rem 0 1rem' : isTablet ? '2rem 2rem 0 2rem' : '3rem 4rem 0 4rem',
+              margin: isMobile ? '1.25rem 1rem 0 1rem' : isTablet ? '2rem 2rem 0 2rem' : '3rem 10rem 0 10rem',
               position: 'relative',
               borderRadius: 24,
               background: '#EEE1CE',
@@ -296,7 +296,7 @@ export default function HomePage() {
             <div
               style={{
                 position: isTablet ? 'relative' : 'absolute',
-                left: isTablet ? 'auto' : '55%',
+                left: isTablet ? 'auto' : '50%',
                 top: isTablet ? 'auto' : '35%',
                 transform: isTablet ? 'none' : 'translate(-50%, -50%)',
                 zIndex: 8,
@@ -415,7 +415,7 @@ export default function HomePage() {
                   style={{
                     position: 'absolute',
                     bottom: '50%',
-                    right: '13%',
+                    right: '14.5%',
                     width: '11.5%',
                     opacity: 0,
                     zIndex: 6,
@@ -460,7 +460,7 @@ export default function HomePage() {
             style={{
               position: 'relative',
               zIndex: 2,
-              margin: isMobile ? '1.5rem 1rem 0 1rem' : isTablet ? '2rem 2rem 0 2rem' : '0 4rem',
+              margin: isMobile ? '1.5rem 1rem 0 1rem' : isTablet ? '2rem 2rem 0 2rem' : '0 8rem',
               display: 'flex',
               alignItems: isTablet ? 'stretch' : 'center',
               justifyContent: isTablet ? 'center' : 'flex-start',
@@ -473,7 +473,6 @@ export default function HomePage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: isMobile ? 'center' : 'flex-start',
-                gap: isMobile ? '0.5rem' : '1rem',
                 width: isTablet ? '100%' : 'auto',
                 flexWrap: isSmallMobile ? 'wrap' : 'nowrap',
               }}
@@ -533,9 +532,7 @@ export default function HomePage() {
                   padding: isMobile ? '0.8rem 1rem' : '1rem',
                   backgroundColor: '#EEE1CE',
                   borderTopRightRadius: '25px',
-                  borderBottomRightRadius: '0px',
-                  borderBottomLeftRadius: '0px',
-                  borderTopLeftRadius: '25px',
+                  borderBottomRightRadius: '25px',
                   width: isSmallMobile ? '100%' : 'auto',
                   textAlign: isSmallMobile ? 'center' : 'left',
                 }}

@@ -7,12 +7,24 @@ export default function PageBanner({ title }) {
       <AnimatedLeaves />
 
       {/* Contenu */}
-      <div className="page-banner-content">
+      <div className="page-banner-content"
+        style={{
+          display: 'flex',                 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          backgroundColor: '#EEE1CE',
+          width: "100%",
+          padding: "0.5rem 10rem",
+          margin: "0 8rem",
+          borderRadius: "25px",
+          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.12)"
+        }}
+      >
         {/* Feuille dorée gauche */}
         <img
           src="/images/Jeu/img_02.png"
           alt=""
-          style={{ width: 48, height: 'auto', opacity: 0.85 }}
+          style={{ width: "10%", opacity: 0.85 , transform: 'scaleX(-1)' }}
         />
 
         {/* Badge titre */}
@@ -22,7 +34,7 @@ export default function PageBanner({ title }) {
         <img
           src="/images/Jeu/img_02.png"
           alt=""
-          style={{ width: 48, height: 'auto', opacity: 0.85, transform: 'scaleX(-1)' }}
+          style={{ width: "10%", opacity: 0.85 }}
         />
       </div>
     </div>

@@ -34,12 +34,12 @@ export default function Navbar() {
       boxShadow: '0 1px 8px rgba(0,0,0,.05)',
     }}>
       <div style={{
-        maxWidth: 1180, margin: '0 auto', padding: '0 1.5rem',
+        margin: '0 auto', padding: '0 10.5rem',
         height: 68,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         {/* ── Left nav links ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15rem', flex: 1 }}>
           <NavLink to="/"      style={lnk} className="hide-mobile">Accueil</NavLink>
           <NavLink to="/jeu"   style={lnk} className="hide-mobile">Jeu</NavLink>
           <NavLink to="/gains" style={lnk} className="hide-mobile">Gain</NavLink>
@@ -68,7 +68,7 @@ export default function Navbar() {
         </Link>
 
         {/* ── Right nav links ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flex: 1, justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15rem', flex: 1, justifyContent: 'flex-end' }}>
           {user ? (
             <>
               {isAdmin

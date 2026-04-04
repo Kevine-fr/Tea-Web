@@ -9,7 +9,6 @@ export default function JeuPage() {
       <PageBanner title="Jeu-concours" />
 
       <section style={{ position: 'relative', background: 'var(--cream)', padding: '3.5rem 1.5rem 4.5rem', overflow: 'hidden' }}>
-        <AnimatedLeaves />
         <div className="container jeu-grid" style={{
           position: 'relative', zIndex: 1,
           display: 'grid',

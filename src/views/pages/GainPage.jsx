@@ -129,7 +129,6 @@ export default function GainPage() {
       <PageBanner title="Lot à gagner" />
 
       <section style={{ position: 'relative', background: 'var(--cream)', padding: '3.5rem 1.5rem 5rem', overflow: 'hidden' }}>
-        <AnimatedLeaves />
 
         <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 1060 }}>
 

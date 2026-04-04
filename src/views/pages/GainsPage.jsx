@@ -8,25 +8,29 @@ import toast from 'react-hot-toast'
 
 const STATUS = {
   pending:   { label: 'En préparation',         cls: 's-prep' },
-  approved:  { label: 'Disponible en boutique', cls: 's-done' },
+  approved:  { label: 'Disponible en boutique', cls: 's-won'  },
   completed: { label: 'Remis',                  cls: 's-done' },
   rejected:  { label: 'Refusé',                 cls: 's-lost' },
 }
 
 export default function GainsPage() {
-  const [list, setList]     = useState([])
+  const [list, setList]       = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     participationsApi.mine()
-      .then(res => setList((res.data ?? []).filter(p => p.prize_id != null)))
+      .then(res => {
+        const data = res.data ?? []
+        // Garder uniquement les participations gagnantes
+        setList(data.filter(p => p.prize_id != null))
+      })
       .catch(() => toast.error('Impossible de charger vos gains.'))
       .finally(() => setLoading(false))
   }, [])
 
-  function deadline(date) {
-    if (!date) return '—'
-    const d = new Date(new Date(date).getTime() + 60 * 24 * 60 * 60 * 1000)
+  function deadline(iso) {
+    if (!iso) return '—'
+    const d = new Date(new Date(iso).getTime() + 60 * 24 * 60 * 60 * 1000)
     return d.toLocaleDateString('fr-FR')
   }
 
@@ -58,14 +62,18 @@ export default function GainsPage() {
                 </thead>
                 <tbody>
                   {list.map(p => {
-                    const s = STATUS[p.redemption?.status] || STATUS.pending
+                    // ticket_code.code depuis la resource enrichie
+                    const code = p.ticket_code?.code ?? p.ticket_code_id?.slice(0, 8) ?? '—'
+                    const prizeName = p.prize?.name ?? 'Gain'
+                    const redem = p.redemption
+                    const s = redem ? (STATUS[redem.status] || STATUS.pending) : STATUS.pending
+                    const dateRef = redem?.requested_at ?? p.participation_date
+
                     return (
                       <tr key={p.id}>
-                        <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>
-                          {p.ticket_code_id ?? p.id?.slice(0, 8) ?? '—'}
-                        </td>
-                        <td style={{ fontWeight: 600 }}>{p.prize?.name ?? 'Gain'}</td>
-                        <td>{deadline(p.participation_date)}</td>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{code}</td>
+                        <td style={{ fontWeight: 600 }}>{prizeName}</td>
+                        <td>{deadline(dateRef)}</td>
                         <td><span className={`status ${s.cls}`}>{s.label}</span></td>
                       </tr>
                     )

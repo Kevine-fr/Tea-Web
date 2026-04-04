@@ -21,7 +21,6 @@ export default function ContactPage() {
       <PageBanner title="Contact" />
 
       <section style={{ position: 'relative', background: 'var(--cream)', padding: '2.5rem 1.5rem 4rem', overflow: 'hidden' }}>
-        <AnimatedLeaves />
 
         <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 840 }}>
           <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
