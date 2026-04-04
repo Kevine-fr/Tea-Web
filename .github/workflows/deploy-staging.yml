@@ -1,0 +1,51 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ staging ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
+        run: |
+          ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << EOF
+          set -e
+
+          echo "📦 Préparation du déploiement..."
+          cd /home/deploy/tea-app-web || exit 1
+
+          echo "🔄 Mise à jour du code..."
+          git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+          git fetch origin
+          git reset --hard origin/${{ github.ref_name }}
+
+          echo "⚙️ Configuration de l'environnement..."
+          cat > .env << 'ENVEOF'
+          VITE_API_URL=https://${{ secrets.VITE_API_URL }}
+          ENVEOF
+
+          # Rebuilder et démarrer
+          echo "🚀 Démarrage des nouveaux conteneurs..."
+          docker compose -f docker-compose.app.prod.yml up -d --build
+
+          echo ""
+          echo "✅ Déploiement terminé !"
+          EOF

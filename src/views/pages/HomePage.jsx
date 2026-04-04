@@ -1,326 +1,600 @@
+// src/views/pages/HomePage.jsx
+
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import AnimatedLeaves from '../components/AnimatedLeaves.jsx'
 
-/* ═══════════════════════════════════════════════════════
-   Hook IntersectionObserver — déclenche une animation
-   quand l'élément entre dans le viewport
-═══════════════════════════════════════════════════════ */
-function useReveal(threshold = 0.15) {
+const CSS = `
+@keyframes fadeInLeft  { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:none} }
+@keyframes fadeInRight { from{opacity:0;transform:translateX(50px)}  to{opacity:1;transform:none} }
+@keyframes fadeInDown  { from{opacity:0;transform:translateY(-24px) rotate(-5deg)} to{opacity:1;transform:rotate(-5deg)} }
+@keyframes fadeInUp    { from{opacity:0;transform:translateY(28px)}  to{opacity:1;transform:none} }
+@keyframes fadeInUpSoft {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 0.5;   /* ← IMPORTANT */
+    transform: translateY(0);
+  }
+}
+`
+
+function useReveal(t = 0.04) {
   const [vis, setVis] = useState(false)
   const ref = useRef(null)
+
   useEffect(() => {
     const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVis(true); obs.disconnect() } },
-      { threshold }
+      ([e]) => {
+        if (e.isIntersecting) {
+          setVis(true)
+          obs.disconnect()
+        }
+      },
+      { threshold: t }
     )
+
     if (ref.current) obs.observe(ref.current)
     return () => obs.disconnect()
-  }, [])
+  }, [t])
+
   return [ref, vis]
 }
 
-/* ─── Animation CSS globale ──────────────────────────── */
-const GLOBAL_CSS = `
-@keyframes fadeInLeft  { from { opacity:0; transform:translateX(-40px) } to { opacity:1; transform:none } }
-@keyframes fadeInRight { from { opacity:0; transform:translateX( 40px) } to { opacity:1; transform:none } }
-@keyframes fadeInDown  { from { opacity:0; transform:translateY(-25px) } to { opacity:1; transform:none } }
-@keyframes fadeInUp    { from { opacity:0; transform:translateY( 30px) } to { opacity:1; transform:none } }
-@keyframes fadeIn      { from { opacity:0 }                              to { opacity:1 } }
-@keyframes scaleIn     { from { opacity:0; transform:scale(.85) }        to { opacity:1; transform:scale(1) } }
-`
+function useWindowWidth() {
+  const [width, setWidth] = useState(window.innerWidth)
 
-/* ─── Carte d'étape (2 tons) ─────────────────────────── */
-function StepCard({ n, img, label, delay }) {
-  const [ref, vis] = useReveal(0.2)
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  return width
+}
+
+function StepCard({ n, img, label, visible, delay, isMobile }) {
   return (
-    <div ref={ref} style={{
-      opacity: vis ? 1 : 0,
-      transform: vis ? 'translateY(0)' : 'translateY(40px)',
-      transition: `opacity .6s ease ${delay}s, transform .6s ease ${delay}s`,
-      borderRadius: 16,
-      overflow: 'hidden',
-      boxShadow: 'var(--shadow-md)',
-      display: 'flex',
-      flexDirection: 'column',
-      width: 190,
-      flexShrink: 0,
-    }}>
-      {/* Haut crème — numéro + icône */}
-      <div style={{ background: 'var(--cream)', padding: '1.25rem 1rem 1rem', textAlign: 'center' }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%',
-          background: 'var(--green-dark)', color: 'white',
-          fontSize: '0.95rem', fontWeight: 700,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 0.85rem',
-        }}>
-          {n}
-        </div>
-        <img src={img} alt={label}
-          style={{ width: 60, height: 60, objectFit: 'contain', display: 'block', margin: '0 auto' }} />
+    <div
+      style={{
+        position: 'relative',
+        paddingTop: 22,
+        width: isMobile ? '100%' : 220,
+        maxWidth: isMobile ? 320 : 220,
+        flexShrink: 0,
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(40px)',
+        transition: `opacity .55s ease ${delay}s, transform .55s ease ${delay}s`,
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 18,
+          zIndex: 3,
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          background: '#1a3c2e',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 700,
+          fontSize: '1rem',
+          boxShadow: '0 3px 12px rgba(0,0,0,.4)',
+          border: '2px solid rgba(255,255,255,.2)',
+        }}
+      >
+        {n}
       </div>
-      {/* Bas vert foncé — label blanc */}
-      <div style={{
-        background: 'var(--green-dark)',
-        color: 'white',
-        padding: '0.75rem 1rem',
-        textAlign: 'center',
-        fontWeight: 700,
-        fontSize: '0.85rem',
-        lineHeight: 1.3,
-      }}>
-        {label}
+
+      <div
+        style={{
+          borderRadius: 16,
+          overflow: 'hidden',
+          boxShadow: '0 8px 28px rgba(0,0,0,.30)',
+        }}
+      >
+        <div
+          style={{
+            background: '#EEE1CE',
+            padding: isMobile ? '1.5rem 1rem 1.2rem' : '1.75rem 1rem 1.4rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <img
+            src={img}
+            alt={label}
+            style={{
+              width: isMobile ? 56 : 68,
+              height: isMobile ? 56 : 68,
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            background: '#1a3c2e',
+            padding: '0.85rem 0.75rem',
+            textAlign: 'center',
+          }}
+        >
+          <span
+            style={{
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: isMobile ? '0.95rem' : '0.9rem',
+              lineHeight: 1.3,
+              fontFamily: "'Lato', sans-serif",
+              display: 'block',
+            }}
+          >
+            {label}
+          </span>
+        </div>
       </div>
     </div>
   )
 }
 
-/* ═══════════════════════════════════════════════════════
-   Page principale
-═══════════════════════════════════════════════════════ */
 export default function HomePage() {
-  /* Refs pour les animations séquentielles du hero */
-  const tagRef     = useRef(null)
-  const titleRef   = useRef(null)
-  const badgeRef   = useRef(null)
-  const descRef    = useRef(null)
-  const btnRef     = useRef(null)
-  const imgRef     = useRef(null)
-  const cardRef    = useRef(null)
+  const tagRef = useRef(null)
+  const badgeRef = useRef(null)
+  const descRef = useRef(null)
+  const ticketRef = useRef(null)
+  const btnRef = useRef(null)
+  const cupRef = useRef(null)
+  const tinRef = useRef(null)
+  const steamRef = useRef(null)
 
-  /* Sections scroll-reveal */
-  const [stepsRef,  stepsVis]  = useReveal(0.1)
-  const [infoRef,   infoVis]   = useReveal(0.15)
+  const [stepsRef, stepsVis] = useReveal(0.04)
+  const width = useWindowWidth()
 
-  /* Animation séquentielle du hero au chargement */
+  const isTablet = width <= 1100
+  const isMobile = width <= 768
+  const isSmallMobile = width <= 480
+
   useEffect(() => {
-    const items = [
-      { el: tagRef.current,   anim: 'fadeInLeft  .6s ease  .1s both' },
-      { el: badgeRef.current,  anim: 'fadeInLeft  .6s ease  .3s both' },
-      { el: descRef.current,   anim: 'fadeInLeft  .6s ease  .5s both' },
-      { el: btnRef.current,    anim: 'fadeInUp    .6s ease  .7s both' },
-      { el: imgRef.current,    anim: 'fadeInRight .7s ease  .2s both' },
-      { el: cardRef.current,   anim: 'fadeInDown  .6s ease  .8s both' },
-    ]
-    items.forEach(({ el, anim }) => {
+    const seq = [
+      { el: tagRef.current, anim: 'fadeInLeft  .55s ease .08s both' },
+      { el: badgeRef.current, anim: 'fadeInLeft  .55s ease .24s both' },
+      { el: descRef.current, anim: 'fadeInLeft  .55s ease .40s both' },
+      { el: ticketRef.current, anim: 'fadeInDown  .65s ease .55s both' },
+      { el: btnRef.current, anim: 'fadeInUp    .50s ease .75s both' },
+      { el: cupRef.current, anim: 'fadeInRight .75s ease .18s both' },
+      { el: tinRef.current, anim: 'fadeInRight .75s ease .36s both' },
+      { el: steamRef.current, anim: 'fadeInUpSoft .8s ease 1.1s both' },    ]
+
+    seq.forEach(({ el, anim }) => {
       if (el) el.style.animation = anim
     })
   }, [])
 
   return (
     <Layout>
-      <style>{GLOBAL_CSS}</style>
+      <style>{CSS}</style>
 
-      {/* ══ HERO ════════════════════════════════════════════ */}
-      <section style={{
-        position: 'relative',
-        background: 'var(--cream)',
-        padding: '2rem 1.5rem 0',
-        overflow: 'hidden',
-        minHeight: '60vh',
-        display: 'flex',
-        alignItems: 'center',
-      }}>
-        <AnimatedLeaves />
-
-        <div className="container" style={{ position: 'relative', zIndex: 1, width: '100%' }}>
-          {/* Grande carte hero */}
-          <div style={{
-            background: 'var(--cream-light)',
-            borderRadius: 20,
-            padding: '2.5rem 3rem',
-            display: 'grid',
-            gridTemplateColumns: '1fr 380px',
-            gap: '2rem',
-            alignItems: 'center',
-            maxWidth: 1000,
-            margin: '0 auto',
-            border: '1px solid var(--cream-border)',
-            boxShadow: 'var(--shadow-md)',
+      <div>
+        <section
+          style={{
+            flex: '1.6',
             position: 'relative',
-            overflow: 'visible',
-          }}>
+            background: '#f5f0e8',
+            overflow: 'hidden',
+          }}
+        >
+          <AnimatedLeaves />
 
-            {/* ── Colonne gauche ── */}
-            <div>
-              {/* Tag */}
-              <p ref={tagRef} style={{
-                fontSize: '0.72rem', fontWeight: 700,
-                letterSpacing: '0.18em', textTransform: 'uppercase',
-                color: 'var(--text-muted)', marginBottom: '0.75rem',
-                opacity: 0,
-              }}>
+          <img
+            src="/images/Accueil/img_09.png"
+            alt=""
+            style={{
+              position: 'absolute',
+              right: '0%',
+              top: '-30%',
+              width: isMobile ? '50%' : 'auto',
+              zIndex: 1,
+              transform: 'rotate(90deg)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          <img
+            src="/images/Accueil/img_09.png"
+            alt=""
+            style={{
+              position: 'absolute',
+              right: isMobile ? '0%' : '15%',
+              bottom: '-30%',
+              width: isMobile ? '50%' : 'auto',
+              zIndex: 1,
+              transform: 'rotate(90deg)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          <div
+            style={{
+              zIndex: 2,
+              padding: isMobile ? '2rem 1.25rem' : '3.5rem 2rem',
+              margin: isMobile ? '1.25rem 1rem 0 1rem' : isTablet ? '2rem 2rem 0 2rem' : '3rem 4rem 0 4rem',
+              position: 'relative',
+              borderRadius: 24,
+              background: '#EEE1CE',
+              border: '1px solid #e2d9c8',
+              boxShadow: '0 6px 40px rgba(0,0,0,.08)',
+              overflow: 'visible',
+              display: 'grid',
+              gridTemplateColumns: isTablet ? '1fr' : '38% 62%',
+              gap: isTablet ? '2rem' : 0,
+            }}
+          >
+            <div style={{ position: 'relative', zIndex: 2 }}>
+              <p
+                ref={tagRef}
+                style={{
+                  fontSize: isMobile ? '1rem' : isTablet ? '1.2rem' : '1.5rem',
+                  fontWeight: 700,
+                  letterSpacing: isMobile ? '0.08em' : '0.18em',
+                  textTransform: 'uppercase',
+                  color: '#6b6b6b',
+                  marginBottom: '0.85rem',
+                  opacity: 0,
+                }}
+              >
                 PARTICIPEZ AU JEU-CONCOURS
               </p>
 
-              {/* Badge vert script */}
-              <div ref={badgeRef} style={{ opacity: 0, marginBottom: '1.25rem', display: 'inline-block' }}>
-                <div style={{
-                  background: 'var(--green-dark)',
-                  display: 'inline-flex', alignItems: 'center',
-                  padding: '0.5rem 1.5rem', borderRadius: 6,
-                }}>
-                  <span style={{ fontFamily: 'var(--font-script)', fontSize: '1.75rem', color: 'white', fontWeight: 600 }}>
-                    Thé Tip Top
-                  </span>
+              <div
+                ref={badgeRef}
+                style={{
+                  display: 'inline-block',
+                  background: '#1a3c2e',
+                  borderRadius: 8,
+                  padding: isMobile ? '0.45rem 1.2rem' : '0.5rem 1.75rem',
+                  marginBottom: '1.1rem',
+                  opacity: 0,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "'Dancing Script', cursive",
+                    fontSize: isMobile ? '2rem' : '2.5rem',
+                    color: '#fff',
+                    fontWeight: 600,
+                  }}
+                >
+                  Thé Tip Top
+                </span>
+              </div>
+
+              <p
+                ref={descRef}
+                style={{
+                  fontSize: isMobile ? '1rem' : isTablet ? '1.05rem' : '1.2rem',
+                  lineHeight: 1.8,
+                  color: '#4a4a4a',
+                  opacity: 0,
+                  maxWidth: isTablet ? '100%' : '90%',
+                }}
+              >
+                Célébrez l'ouverture de notre 10ème boutique à Nice avec notre jeu-concours
+                qui est 100% gagnant et voir une chance de gagner des cadeaux et lots de thé
+                bio artisanaux.
+              </p>
+            </div>
+
+            <div
+              style={{
+                position: isTablet ? 'relative' : 'absolute',
+                left: isTablet ? 'auto' : '55%',
+                top: isTablet ? 'auto' : '35%',
+                transform: isTablet ? 'none' : 'translate(-50%, -50%)',
+                zIndex: 8,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1.25rem',
+                width: isTablet ? '100%' : 'auto',
+                marginTop: isTablet ? '1rem' : 0,
+              }}
+            >
+              <div
+                ref={ticketRef}
+                style={{
+                  width: isMobile ? '100%' : isTablet ? '70%' : '95%',
+                  maxWidth: isMobile ? 340 : 520,
+                  transform: 'rotate(-5deg)',
+                  filter: 'drop-shadow(0 8px 20px rgba(0,0,0,.18))',
+                  opacity: 0,
+                }}
+              >
+                <div style={{ position: 'relative' }}>
+                  <img
+                    src="/images/Accueil/img_06.png"
+                    alt=""
+                    style={{
+                      width: '100%',
+                      display: 'block',
+                      borderRadius: 8,
+                      transform: 'rotate(175deg)',
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%) rotate(-5deg)',
+                      textAlign: 'center',
+                      width: '72%',
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: "'Playfair Display', serif",
+                        fontWeight: 700,
+                        fontSize: isMobile ? '1.2rem' : '1.8rem',
+                        color: '#1a1a1a',
+                        marginBottom: '0.2rem',
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      Tirage au sort final :
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: "'Dancing Script', cursive",
+                        fontSize: isMobile ? '1.6rem' : '2.2rem',
+                        color: '#e8431a',
+                        fontWeight: 700,
+                        lineHeight: 1.15,
+                      }}
+                    >
+                      1 AN de thé offert
+                    </p>
+                    <div
+                      style={{
+                        width: '55%',
+                        height: 1,
+                        background: 'rgba(170,130,40,.5)',
+                        margin: '0.25rem auto',
+                      }}
+                    />
+                    <p
+                      style={{
+                        fontSize: isMobile ? '0.85rem' : '1rem',
+                        color: '#666',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      Jeu limité dans le temps.
+                      <br />
+                      Voir modalité en magasin et sur le site
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Description */}
-              <p ref={descRef} style={{
-                fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.8,
-                maxWidth: 420, marginBottom: '1.75rem', opacity: 0,
-              }}>
-                Célébrez l'ouverture de notre 10ème boutique à Nice avec notre jeu-concours
-                qui est 100% gagnant et voir une chance de gagner des cadeaux et lots de thé bio artisanaux.
-              </p>
-
-              {/* Bouton */}
               <div ref={btnRef} style={{ opacity: 0 }}>
-                <Link to="/register" className="btn btn-orange" style={{ fontSize: '1rem', padding: '0.85rem 2rem' }}>
+                <Link
+                  to="/register"
+                  style={{
+                    display: 'inline-block',
+                    background: '#e8431a',
+                    color: '#fff',
+                    borderRadius: 50,
+                    padding: isMobile ? '0.8rem 2rem' : '0.9rem 2.5rem',
+                    fontSize: isMobile ? '0.95rem' : '1.05rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    boxShadow: '0 4px 16px rgba(232,67,26,.35)',
+                    fontFamily: "'Lato', sans-serif",
+                  }}
+                >
                   Jouer maintenant
                 </Link>
               </div>
             </div>
 
-            {/* ── Colonne droite (images) ── */}
-            <div className="hero-img-col" style={{ position: 'relative', minHeight: 280 }}>
-              {/* Boîte de thé principale */}
-              <div ref={imgRef} style={{ opacity: 0, textAlign: 'center' }}>
+            {!isTablet && (
+              <>
                 <img
-                  src="/images/Accueil/img_01.png"
-                  alt="Thé Tip Top"
-                  style={{ width: 200, height: 'auto', objectFit: 'contain', display: 'inline-block' }}
+                  ref={steamRef} 
+                  src="/images/Accueil/img_10.png"
+                  alt=""
+                  style={{
+                    position: 'absolute',
+                    bottom: '50%',
+                    right: '13%',
+                    width: '11.5%',
+                    opacity: 0,
+                    zIndex: 6,
+                  }}
                 />
+
+                <img
+                  ref={cupRef}
+                  src="/images/Accueil/img_02.png"
+                  alt=""
+                  style={{
+                    position: 'absolute',
+                    bottom: '0%',
+                    right: '7.5%',
+                    height: '70%',
+                    width: 'auto',
+                    zIndex: 5,
+                    opacity: 0,
+                  }}
+                />
+
+                <img
+                  ref={tinRef}
+                  src="/images/Accueil/img_01.png"
+                  alt=""
+                  style={{
+                    position: 'absolute',
+                    top: '0%',
+                    right: '0%',
+                    height: '100%',
+                    width: 'auto',
+                    zIndex: 4,
+                    opacity: 0,
+                  }}
+                />
+              </>
+            )}
+          </div>
+
+          <div
+            ref={stepsRef}
+            style={{
+              position: 'relative',
+              zIndex: 2,
+              margin: isMobile ? '1.5rem 1rem 0 1rem' : isTablet ? '2rem 2rem 0 2rem' : '0 4rem',
+              display: 'flex',
+              alignItems: isTablet ? 'stretch' : 'center',
+              justifyContent: isTablet ? 'center' : 'flex-start',
+              flexWrap: 'wrap',
+              gap: isMobile ? '1.25rem' : '3rem',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: isMobile ? 'center' : 'flex-start',
+                gap: isMobile ? '0.5rem' : '1rem',
+                width: isTablet ? '100%' : 'auto',
+                flexWrap: isSmallMobile ? 'wrap' : 'nowrap',
+              }}
+            >
+              <div
+                style={{
+                  height: isMobile ? 180 : 265,
+                  position: 'relative',
+                  flexShrink: 0,
+                  opacity: stepsVis ? 1 : 0,
+                  transform: stepsVis ? 'scale(1)' : 'scale(0.78)',
+                  transition: 'opacity .55s ease, transform .55s ease',
+                }}
+              >
+                <img
+                  src="/images/Accueil/img_05.png"
+                  alt=""
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: "'Playfair Display',serif",
+                      fontStyle: 'italic',
+                      color: '#fff',
+                      fontSize: isMobile ? '1.45rem' : '2.2rem',
+                      lineHeight: 1,
+                    }}
+                  >
+                    100%
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'Playfair Display',serif",
+                      fontStyle: 'italic',
+                      color: '#fff',
+                      fontSize: isMobile ? '1.45rem' : '2.2rem',
+                    }}
+                  >
+                    Gagnant
+                  </span>
+                </div>
               </div>
 
-              {/* Carte flottante "Tirage au sort" */}
-              <div ref={cardRef} style={{
-                position: 'absolute', top: -15, right: -20,
-                background: 'white', borderRadius: 12,
-                padding: '1rem 1.25rem',
-                boxShadow: 'var(--shadow-md)',
-                maxWidth: 190,
-                border: '1px solid var(--cream-border)',
-                opacity: 0,
-              }}>
-                <p style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
-                  Tirage au sort final :
-                </p>
-                <p style={{ fontFamily: 'var(--font-script)', fontSize: '1.1rem', color: 'var(--orange)', fontWeight: 700, lineHeight: 1.2 }}>
-                  1 AN de thé offert
-                </p>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.4rem', lineHeight: 1.45 }}>
-                  Jeu limité dans le temps.<br />
-                  Voir modalité en magasin et sur le site
-                </p>
+              <div
+                style={{
+                  padding: isMobile ? '0.8rem 1rem' : '1rem',
+                  backgroundColor: '#EEE1CE',
+                  borderTopRightRadius: '25px',
+                  borderBottomRightRadius: '0px',
+                  borderBottomLeftRadius: '0px',
+                  borderTopLeftRadius: '25px',
+                  width: isSmallMobile ? '100%' : 'auto',
+                  textAlign: isSmallMobile ? 'center' : 'left',
+                }}
+              >
+                <h2
+                  style={{
+                    fontFamily: "'Playfair Display',serif",
+                    color: '#1a3c2e',
+                    fontSize: isMobile ? '1.2rem' : '1.55rem',
+                    margin: 0,
+                    whiteSpace: isSmallMobile ? 'normal' : 'nowrap',
+                    opacity: stepsVis ? 1 : 0,
+                    transform: stepsVis ? 'none' : 'translateX(-20px)',
+                    transition: 'opacity .55s ease .14s, transform .55s ease .14s',
+                  }}
+                >
+                  Comment ça marche ?
+                </h2>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ══ COMMENT ÇA MARCHE ═══════════════════════════════ */}
-      <section style={{
-        position: 'relative',
-        background: 'var(--green-dark)',
-        padding: '3.5rem 1.5rem 4rem',
-        overflow: 'hidden',
-      }}>
-        {/* Grande feuille en texture de fond */}
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0.25, pointerEvents: 'none' }}>
-          <img src="/images/Accueil/img_09.png" alt="" style={{ position: 'absolute', bottom: -60, left: '30%', width: 420, transform: 'rotate(-10deg)' }} />
-          <img src="/images/Accueil/img_09.png" alt="" style={{ position: 'absolute', top: -40, right: '10%', width: 300, transform: 'rotate(15deg) scaleX(-1)' }} />
-        </div>
-
-        <div ref={stepsRef} className="container" style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2rem',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-          }}>
-            {/* Badge 100% gagnant */}
-            <div style={{
-              opacity: stepsVis ? 1 : 0,
-              transform: stepsVis ? 'scale(1)' : 'scale(.8)',
-              transition: 'opacity .6s ease, transform .6s ease',
-              position: 'relative', width: 130, height: 130, flexShrink: 0,
-            }}>
-              <img src="/images/Accueil/img_05.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              <div style={{
-                position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.3rem', fontWeight: 700, color: 'white', fontStyle: 'italic', lineHeight: 1 }}>100%</span>
-                <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', color: 'white', fontStyle: 'italic' }}>Gagnant</span>
-              </div>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: isMobile ? '1rem' : '1.5rem',
+                justifyContent: 'center',
+                flex: 1,
+                width: isTablet ? '100%' : 'auto',
+              }}
+            >
+              <StepCard
+                n={1}
+                img="/images/Accueil/img_08.png"
+                label="Récupère ton ticket"
+                visible={stepsVis}
+                delay={0.28}
+                isMobile={isMobile}
+              />
+              <StepCard
+                n={2}
+                img="/images/Accueil/img_07.png"
+                label="Saisis ton code"
+                visible={stepsVis}
+                delay={0.44}
+                isMobile={isMobile}
+              />
+              <StepCard
+                n={3}
+                img="/images/Accueil/img_04.png"
+                label="Découvre ton lot"
+                visible={stepsVis}
+                delay={0.60}
+                isMobile={isMobile}
+              />
             </div>
-
-            {/* Texte */}
-            <h2 style={{
-              color: 'white', fontSize: '1.5rem', whiteSpace: 'nowrap',
-              opacity: stepsVis ? 1 : 0,
-              transform: stepsVis ? 'translateX(0)' : 'translateX(-20px)',
-              transition: 'opacity .6s ease .15s, transform .6s ease .15s',
-            }}>
-              Comment ça marche ?
-            </h2>
-
-            {/* 3 cartes étapes */}
-            <StepCard n="1" img="/images/Accueil/img_08.png" label="Récupère ton ticket" delay={stepsVis ? 0.3 : 99} />
-            <StepCard n="2" img="/images/Accueil/img_07.png" label="Saisis ton code"      delay={stepsVis ? 0.5 : 99} />
-            <StepCard n="3" img="/images/Accueil/img_04.png" label="Découvre ton lot"     delay={stepsVis ? 0.7 : 99} />
           </div>
-        </div>
-      </section>
-
-      {/* ══ GRAND JEU-CONCOURS ══════════════════════════════ */}
-      <section style={{ background: 'var(--cream)', padding: '5rem 1.5rem' }}>
-        <div ref={infoRef} className="container" style={{ maxWidth: 780, textAlign: 'center' }}>
-          <h2 style={{
-            marginBottom: '1.25rem',
-            opacity: infoVis ? 1 : 0,
-            transform: infoVis ? 'translateY(0)' : 'translateY(30px)',
-            transition: 'opacity .6s ease, transform .6s ease',
-          }}>
-            Grand jeu-concours
-          </h2>
-          <p style={{
-            color: 'var(--text-muted)', lineHeight: 1.85, marginBottom: '1rem', fontSize: '0.95rem',
-            opacity: infoVis ? 1 : 0,
-            transform: infoVis ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'opacity .6s ease .15s, transform .6s ease .15s',
-          }}>
-            À l'occasion de l'ouverture de la 10e boutique Thé Tip Top à Nice, la marque organise
-            un grand jeu-concours exclusif destiné à faire découvrir son univers et ses créations.
-          </p>
-          <p style={{
-            color: 'var(--text-muted)', lineHeight: 1.85, marginBottom: '2.5rem', fontSize: '0.95rem',
-            opacity: infoVis ? 1 : 0,
-            transform: infoVis ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'opacity .6s ease .3s, transform .6s ease .3s',
-          }}>
-            Chaque client ayant effectué un achat supérieur à 49 € reçoit un code unique à 10 caractères
-            lui permettant de participer en ligne. 100 % des participations sont gagnantes et donnent
-            accès à un lot à retirer en boutique ou en ligne, selon les modalités prévues par le règlement.
-          </p>
-          <div style={{
-            opacity: infoVis ? 1 : 0,
-            transform: infoVis ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'opacity .6s ease .45s, transform .6s ease .45s',
-          }}>
-            <Link to="/jeu" className="btn btn-orange" style={{ fontSize: '0.95rem' }}>
-              En savoir plus
-            </Link>
-          </div>
-        </div>
-      </section>
-
+        </section>
+      </div>
     </Layout>
   )
 }
