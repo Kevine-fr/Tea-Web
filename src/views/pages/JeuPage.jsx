@@ -1,6 +1,6 @@
 // src/views/pages/JeuPage.jsx
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
@@ -9,6 +9,63 @@ const CSS = `
 @keyframes jeuImgIn  { from { opacity:0; transform: translateX(-45px) scale(0.97) } to { opacity:1; transform: none } }
 @keyframes jeuTextIn { from { opacity:0; transform: translateX( 35px) } to { opacity:1; transform: none } }
 @keyframes jeuLineIn { from { opacity:0; transform: translateY(12px) } to { opacity:1; transform: none } }
+
+@keyframes jeuImgHoverShine {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes jeuShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes jeuPulseRing {
+  0%   { box-shadow: 0 0 0 0   rgba(200,100,40,.38); }
+  70%  { box-shadow: 0 0 0 12px rgba(200,100,40,0); }
+  100% { box-shadow: 0 0 0 0   rgba(200,100,40,0); }
+}
+
+/* ── Image hover lift ── */
+.jeu-img-col img {
+  transition: transform .4s cubic-bezier(.25,.46,.45,.94), box-shadow .4s ease;
+}
+.jeu-img-col:hover img {
+  transform: scale(1.025) translateY(-4px);
+  box-shadow: 0 20px 48px rgba(0,0,0,.18) !important;
+}
+
+/* ── Paragraphes hover subtil ── */
+.jeu-text-block p {
+  transition: color .25s ease;
+}
+.jeu-text-block p:hover {
+  color: var(--text-dark, #2a2a2a);
+}
+
+/* ── Bouton shimmer + pulse ── */
+.jeu-btn {
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.jeu-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent);
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.jeu-btn:hover {
+  transform: translateY(-3px);
+  animation: jeuPulseRing 1.4s ease-out infinite;
+}
+.jeu-btn:hover::after {
+  opacity: 1;
+  animation: jeuShimmer 1s linear infinite;
+}
+.jeu-btn:active {
+  transform: translateY(-1px);
+}
 `
 
 export default function JeuPage() {
@@ -36,13 +93,13 @@ export default function JeuPage() {
       <PageBanner title="Jeu-concours" />
 
       <section style={{ position: 'relative', background: 'var(--cream)', padding: '3.5rem 1.5rem 4.5rem', overflow: 'hidden' }}>
-        <div className="container jeu-grid" style={{
+        <div style={{
           position: 'relative', zIndex: 1,
-          display: 'grid',
+          display: 'flex',
           gridTemplateColumns: '420px 1fr',
           gap: '3.5rem',
           alignItems: 'center',
-          maxWidth: 1000,
+          padding: "0 8rem"
         }}>
           <div ref={imgRef} className="jeu-img-col" style={{ opacity: 0 }}>
             <img
@@ -52,7 +109,7 @@ export default function JeuPage() {
             />
           </div>
 
-          <div>
+          <div className="jeu-text-block">
             <h2 ref={h2Ref} style={{ marginBottom: '1.25rem', opacity: 0 }}>Présentation du jeu</h2>
 
             <p ref={p1Ref} style={{ color: 'var(--text-muted)', lineHeight: 1.85, marginBottom: '1rem', fontSize: '0.93rem', textAlign: 'justify', opacity: 0 }}>
@@ -68,7 +125,7 @@ export default function JeuPage() {
               Participez dès maintenant pour gagner des cadeaux thé de luxe !
             </p>
             <div ref={btnRef} style={{ opacity: 0 }}>
-              <Link to="/gains" className="btn btn-orange" style={{ fontSize: '0.95rem' }}>
+              <Link to="/gains" className="btn btn-orange jeu-btn" style={{ fontSize: '0.95rem' }}>
                 Lots à gagner
               </Link>
             </div>

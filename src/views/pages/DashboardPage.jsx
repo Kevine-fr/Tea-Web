@@ -248,7 +248,7 @@ export default function DashboardPage() {
           background: 'radial-gradient(circle, rgba(200,100,40,.06) 0%, transparent 70%)',
         }} />
 
-        <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 980 }}>
+        <div style={{ position: 'relative', zIndex: 1, padding: "0 8rem"}}>
 
           {/* ── Titre ── */}
           <h2 className="dash-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>

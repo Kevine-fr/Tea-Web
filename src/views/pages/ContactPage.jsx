@@ -35,7 +35,7 @@ export default function ContactPage() {
 
       <section style={{ position: 'relative', background: 'var(--cream)', padding: '2.5rem 1.5rem 4rem', overflow: 'hidden' }}>
 
-        <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 840 }}>
+        <div className="" style={{ position: 'relative', zIndex: 1, padding: "0 8rem" }}>
           <div ref={titleRef} style={{ textAlign: 'center', marginBottom: '1.75rem', opacity: 0 }}>
             <h2>Écrivez-nous !</h2>
             <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem', fontSize: '0.92rem', lineHeight: 1.7 }}>

@@ -206,12 +206,12 @@ export default function RegisterPage() {
         </div>
 
         {/* ── Grille ── */}
-        <div className="container auth-grid" style={{
+        <div className="auth-grid" style={{
           display: 'grid',
-          gridTemplateColumns: '300px 1fr',
+          gridTemplateColumns: '500px 1fr',
           gap: '2rem',
           alignItems: 'start',
-          maxWidth: 920,
+          padding: "0 8rem"
         }}>
 
           {/* ── Image ── */}
@@ -219,7 +219,7 @@ export default function RegisterPage() {
             <img
               src="/images/Inscription/img_01.png"
               alt="Inscription"
-              style={{ width: '100%', height: 450, objectFit: 'cover' }}
+              style={{ width: '100%', height: 615, objectFit: 'cover' }}
             />
           </div>
 

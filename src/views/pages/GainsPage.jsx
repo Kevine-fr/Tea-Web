@@ -178,7 +178,7 @@ export default function GainsPage() {
           background: 'radial-gradient(circle, rgba(200,100,40,.06) 0%, transparent 70%)',
         }} />
 
-        <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 980 }}>
+        <div style={{ position: 'relative', zIndex: 1, padding: "0 8rem"}}>
 
           {/* ── Titre ── */}
           <div ref={titleRef} className="gains-title" style={{ textAlign: 'center' }}>

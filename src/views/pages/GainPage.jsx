@@ -210,7 +210,7 @@ export default function GainPage() {
           background: 'radial-gradient(circle, rgba(200,100,40,.06) 0%, transparent 70%)',
         }} />
 
-        <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 1060 }}>
+        <div style={{ position: 'relative', zIndex: 1, padding: "0 8rem"}}>
 
           {/* Titre */}
           <div ref={titleRef} style={{
@@ -227,7 +227,7 @@ export default function GainPage() {
             opacity:    titleVis ? 1 : 0,
             transition: 'opacity .6s ease .25s',
             textAlign: 'center', color: 'var(--text-muted)',
-            maxWidth: 820, margin: '1rem auto 3.5rem',
+            margin: '1rem 0 3.5rem',
             lineHeight: 1.8, fontSize: '0.92rem',
           }}>
             Découvrez les lots et coffrets de thés mis en jeu : une sélection de cadeaux bio et artisanaux,

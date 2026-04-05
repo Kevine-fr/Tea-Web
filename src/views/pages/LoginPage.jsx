@@ -223,12 +223,12 @@ export default function LoginPage() {
         </div>
 
         {/* ── Grille ── */}
-        <div className="container auth-grid" style={{
+        <div className="auth-grid" style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 340px',
+          gridTemplateColumns: '1fr 500px',
           gap: '2rem',
           alignItems: 'start',
-          maxWidth: 900,
+          padding: "0 8rem"
         }}>
 
           {/* ── Formulaire ── */}
@@ -323,7 +323,7 @@ export default function LoginPage() {
             <img
               src="/images/Connexion/img_01.png"
               alt="Thé Tip Top"
-              style={{ width: '100%', height: 420, objectFit: 'cover' }}
+              style={{ width: '100%', height: 545, objectFit: 'cover' }}
             />
           </div>
         </div>
