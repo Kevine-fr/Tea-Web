@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
-import AnimatedLeaves from '../components/AnimatedLeaves.jsx'
-import client from '../../api/client.js'
 
 /* ─── Hook scroll-reveal ──────────────────────────────────── */
 function useReveal(threshold = 0.15) {
@@ -21,7 +19,7 @@ function useReveal(threshold = 0.15) {
 }
 
 /* ─── Données statiques des 3 lots ───────────────────────── */
-const STATIC = [
+const PRIZES = [
   {
     img:   '/images/Gain/img_01.png',
     title: 'Lot 1 - Infuseur à thé',
@@ -48,47 +46,125 @@ const STATIC = [
   },
 ]
 
-function PrizeCard({ prize, delay = 0 }) {
+/* ─── Styles d'animation ─────────────────────────────────── */
+const STYLES = `
+  @keyframes floatBadge {
+    0%, 100% { transform: translateX(-50%) translateY(0px); }
+    50%       { transform: translateX(-50%) translateY(-6px); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+  @keyframes pulse-ring {
+    0%   { box-shadow: 0 0 0 0   rgba(200,100,40,.35); }
+    70%  { box-shadow: 0 0 0 12px rgba(200,100,40,0); }
+    100% { box-shadow: 0 0 0 0   rgba(200,100,40,0); }
+  }
+  @keyframes lineGrow {
+    from { width: 0; }
+    to   { width: 56px; }
+  }
+
+  .prize-card-wrapper {
+    position: relative;
+    padding-top: 55px;
+    transition: transform .35s cubic-bezier(.22,.68,0,1.2);
+  }
+  .prize-card-wrapper:hover { transform: translateY(-8px); }
+
+  .prize-card-inner {
+    background: white;
+    border-radius: 16px;
+    padding: 3rem 1.5rem 1.75rem;
+    border: 1px solid var(--cream-border);
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+    transition: box-shadow .35s ease, border-color .35s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .prize-card-wrapper:hover .prize-card-inner {
+    box-shadow: 0 16px 40px rgba(0,0,0,.10), 0 4px 12px rgba(0,0,0,.06);
+    border-color: var(--green-mid, #6a8f5a);
+  }
+
+  .prize-avatar {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--cream-border);
+    background: var(--cream);
+    z-index: 2;
+    box-shadow: var(--shadow-sm);
+    transition: transform .35s cubic-bezier(.22,.68,0,1.4), border-color .3s ease;
+  }
+  .prize-card-wrapper:hover .prize-avatar {
+    transform: translateX(-50%) scale(1.1);
+    border-color: var(--green-mid, #6a8f5a);
+    animation: floatBadge 2.8s ease-in-out infinite;
+  }
+  .prize-avatar img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform .4s ease;
+  }
+  .prize-card-wrapper:hover .prize-avatar img { transform: scale(1.08); }
+
+  .prize-number {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--green-mid, #6a8f5a);
+    color: white;
+    font-size: 0.72rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transform: scale(0.6);
+    transition: opacity .3s ease, transform .4s cubic-bezier(.22,.68,0,1.4);
+  }
+  .prize-card-wrapper:hover .prize-number { opacity: 1; transform: scale(1); }
+
+  .btn-shimmer { position: relative; overflow: hidden; }
+  .btn-shimmer::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+    background-size: 200% 100%;
+    opacity: 0; transition: opacity .2s;
+  }
+  .btn-shimmer:hover::after { opacity: 1; animation: shimmer 1s linear infinite; }
+  .btn-shimmer:hover { animation: pulse-ring 1.4s ease-out infinite; }
+
+  .gain-deco-circle { position: absolute; border-radius: 50%; pointer-events: none; }
+  .section-underline {
+    display: block; height: 3px; width: 56px;
+    border-radius: 4px; background: var(--orange, #c8723a);
+    margin: 0.6rem auto 0;
+    animation: lineGrow .6s ease forwards;
+  }
+`
+
+function PrizeCard({ prize, index, delay = 0 }) {
   const [ref, vis] = useReveal()
   return (
-    <div ref={ref} style={{
-      opacity: vis ? 1 : 0,
-      transform: vis ? 'translateY(0)' : 'translateY(40px)',
-      transition: `opacity .6s ease ${delay}s, transform .6s ease ${delay}s`,
-      position: 'relative',
-      paddingTop: 55,
-    }}>
-      {/* Image circulaire qui dépasse en haut */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 100, height: 100,
-        borderRadius: '50%',
-        overflow: 'hidden',
-        border: '3px solid var(--cream-border)',
-        background: 'var(--cream)',
-        zIndex: 2,
-        boxShadow: 'var(--shadow-sm)',
-      }}>
-        <img
-          src={prize.img}
-          alt={prize.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          onError={e => { e.target.style.display = 'none' }}
-        />
+    <div
+      ref={ref}
+      className="prize-card-wrapper"
+      style={{
+        opacity:    vis ? 1 : 0,
+        transform:  vis ? 'translateY(0)' : 'translateY(48px)',
+        transition: `opacity .6s ease ${delay}s, transform .7s cubic-bezier(.22,.68,0,1.1) ${delay}s`,
+      }}
+    >
+      <div className="prize-avatar">
+        <img src={prize.img} alt={prize.title} onError={e => { e.target.style.display = 'none' }} />
       </div>
 
-      {/* Carte */}
-      <div style={{
-        background: 'white',
-        borderRadius: 16,
-        padding: '3rem 1.5rem 1.75rem',
-        border: '1px solid var(--cream-border)',
-        boxShadow: 'var(--shadow-sm)',
-        height: '100%',
-      }}>
+      <div className="prize-card-inner">
+        <span className="prize-number">{index + 1}</span>
         <h3 style={{ textAlign: 'center', fontSize: '1.05rem', marginBottom: '0.9rem', lineHeight: 1.35 }}>
           {prize.title}
         </h3>
@@ -105,23 +181,17 @@ function PrizeCard({ prize, delay = 0 }) {
 }
 
 export default function GainPage() {
-  const [prizes, setPrizes] = useState(STATIC)
   const [titleRef, titleVis] = useReveal()
-  const [btnRef, btnVis]     = useReveal()
+  const [btnRef,   btnVis]   = useReveal()
 
   useEffect(() => {
-    client.get('prizes').then(r => {
-      const api = r.data?.data ?? r.data ?? []
-      if (Array.isArray(api) && api.length > 0) {
-        // Limiter à 3 lots max, utiliser les images statiques
-        const mapped = api.slice(0, 3).map((p, i) => ({
-          img:   STATIC[i]?.img || '/images/Gain/img_01.png',
-          title: p.name,
-          lines: [p.description || STATIC[i]?.lines[0] || ''],
-        }))
-        setPrizes(mapped)
-      }
-    }).catch(() => {})
+    const id = '__gain-styles__'
+    if (!document.getElementById(id)) {
+      const el = document.createElement('style')
+      el.id = id
+      el.textContent = STYLES
+      document.head.appendChild(el)
+    }
   }, [])
 
   return (
@@ -130,22 +200,34 @@ export default function GainPage() {
 
       <section style={{ position: 'relative', background: 'var(--cream)', padding: '3.5rem 1.5rem 5rem', overflow: 'hidden' }}>
 
+        {/* Décorations fond */}
+        <div className="gain-deco-circle" style={{
+          width: 420, height: 420, top: -140, right: -100,
+          background: 'radial-gradient(circle, rgba(80,120,60,.07) 0%, transparent 70%)',
+        }} />
+        <div className="gain-deco-circle" style={{
+          width: 300, height: 300, bottom: -80, left: -80,
+          background: 'radial-gradient(circle, rgba(200,100,40,.06) 0%, transparent 70%)',
+        }} />
+
         <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 1060 }}>
 
           {/* Titre */}
           <div ref={titleRef} style={{
-            opacity: titleVis ? 1 : 0,
-            transform: titleVis ? 'translateY(0)' : 'translateY(30px)',
+            opacity:    titleVis ? 1 : 0,
+            transform:  titleVis ? 'translateY(0)' : 'translateY(30px)',
             transition: 'opacity .6s ease, transform .6s ease',
-            textAlign: 'center', marginBottom: '0.75rem',
+            textAlign: 'center', marginBottom: '0.5rem',
           }}>
             <h2>Découvrir les gains</h2>
+            {titleVis && <span className="section-underline" />}
           </div>
+
           <div style={{
-            opacity: titleVis ? 1 : 0,
-            transition: 'opacity .6s ease .15s',
+            opacity:    titleVis ? 1 : 0,
+            transition: 'opacity .6s ease .25s',
             textAlign: 'center', color: 'var(--text-muted)',
-            maxWidth: 820, margin: '0 auto 3.5rem',
+            maxWidth: 820, margin: '1rem auto 3.5rem',
             lineHeight: 1.8, fontSize: '0.92rem',
           }}>
             Découvrez les lots et coffrets de thés mis en jeu : une sélection de cadeaux bio et artisanaux,
@@ -161,19 +243,20 @@ export default function GainPage() {
             alignItems: 'start',
             marginBottom: '3rem',
           }}>
-            {prizes.map((p, i) => (
-              <PrizeCard key={i} prize={p} delay={i * 0.15} />
+            {PRIZES.map((p, i) => (
+              <PrizeCard key={i} prize={p} index={i} delay={i * 0.15} />
             ))}
           </div>
 
           {/* CTA */}
           <div ref={btnRef} style={{
             textAlign: 'center',
-            opacity: btnVis ? 1 : 0,
-            transform: btnVis ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'opacity .5s ease, transform .5s ease',
+            opacity:    btnVis ? 1 : 0,
+            transform:  btnVis ? 'translateY(0)' : 'translateY(20px)',
+            transition: 'opacity .5s ease .1s, transform .5s ease .1s',
           }}>
-            <Link to="/register" className="btn btn-orange" style={{ fontSize: '0.95rem', padding: '0.85rem 2.5rem' }}>
+            <Link to="/register" className="btn btn-orange btn-shimmer"
+              style={{ fontSize: '0.95rem', padding: '0.85rem 2.5rem' }}>
               Participer au Jeu-Concours
             </Link>
           </div>

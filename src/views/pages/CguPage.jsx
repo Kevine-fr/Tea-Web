@@ -1,7 +1,27 @@
-import { useState } from 'react'
+// src/views/pages/CguPage.jsx
+
+import { useEffect, useRef, useState } from 'react'
 import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
-import AnimatedLeaves from '../components/AnimatedLeaves.jsx'
+
+const CSS = `
+@keyframes accIn  { from { opacity:0; transform: translateY(18px) } to { opacity:1; transform: none } }
+@keyframes accOpen { from { opacity:0; max-height:0 } to { opacity:1; max-height: 300px } }
+`
+
+function useReveal() {
+  const [vis, setVis] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVis(true); obs.disconnect() } },
+      { threshold: 0.05 }
+    )
+    if (ref.current) obs.observe(ref.current)
+    return () => obs.disconnect()
+  }, [])
+  return [ref, vis]
+}
 
 const ARTICLES = [
   { title: 'Article 1 — Objet du jeu-concours', body: "Le jeu-concours Thé Tip Top est organisé à l'occasion de l'ouverture de la 10ème boutique à Nice. Il est ouvert à toute personne physique majeure résidant en France métropolitaine, à l'exclusion des employés et de leurs proches." },
@@ -13,26 +33,55 @@ const ARTICLES = [
   { title: 'Article 7 — Mise à jour des conditions', body: "Thé Tip Top se réserve le droit de modifier les présentes CGU à tout moment. Les participants seront informés de toute modification substantielle par e-mail ou via le site." },
 ]
 
+function AccItem({ title, body, delay }) {
+  const [open, setOpen] = useState(false)
+  const [ref, vis] = useReveal()
+  return (
+    <div ref={ref} className="acc-item" style={{
+      opacity: vis ? 1 : 0,
+      transform: vis ? 'translateY(0)' : 'translateY(18px)',
+      transition: `opacity .45s ease ${delay}s, transform .45s ease ${delay}s`,
+    }}>
+      <div className="acc-head" onClick={() => setOpen(!open)}>
+        <span>{title}</span>
+        <span style={{
+          fontSize: '1.3rem', fontWeight: 300, color: 'var(--text-muted)', lineHeight: 1,
+          transition: 'transform .25s ease',
+          display: 'inline-block',
+          transform: open ? 'rotate(45deg)' : 'none',
+        }}>+</span>
+      </div>
+      {open && (
+        <div className="acc-body" style={{ animation: 'accOpen .3s ease both' }}>
+          {body}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function CguPage() {
-  const [open, setOpen] = useState(null)
+  const titleRef = useRef(null)
+  const descRef  = useRef(null)
+  useEffect(() => {
+    if (titleRef.current) titleRef.current.style.animation = 'accIn .55s ease .1s both'
+    if (descRef.current)  descRef.current.style.animation  = 'accIn .55s ease .25s both'
+  }, [])
+
   return (
     <Layout>
+      <style>{CSS}</style>
       <PageBanner title="Conditions générales d'utilisation" />
       <section style={{ position: 'relative', background: 'var(--cream)', padding: '3rem 1.5rem 4rem', overflow: 'hidden' }}>
-        <AnimatedLeaves />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 820, margin: '0 auto' }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '0.75rem' }}>Règles d'utilisation du site Thé Tip Top</h2>
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: 1.8, fontSize: '0.92rem' }}>
+          <h2 ref={titleRef} style={{ textAlign: 'center', marginBottom: '0.75rem', opacity: 0 }}>
+            Règles d'utilisation du site Thé Tip Top
+          </h2>
+          <p ref={descRef} style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: 1.8, fontSize: '0.92rem', opacity: 0 }}>
             Ces conditions expliquent les règles d'accès et d'utilisation du site Thé Tip Top (compte, participation, contenus) et les bonnes pratiques à respecter.
           </p>
           {ARTICLES.map((a, i) => (
-            <div key={i} className="acc-item">
-              <div className="acc-head" onClick={() => setOpen(open === i ? null : i)}>
-                <span>{a.title}</span>
-                <span style={{ fontSize: '1.3rem', fontWeight: 300, color: 'var(--text-muted)', lineHeight: 1 }}>{open === i ? '−' : '+'}</span>
-              </div>
-              {open === i && <div className="acc-body">{a.body}</div>}
-            </div>
+            <AccItem key={i} title={a.title} body={a.body} delay={Math.min(i * 0.07, 0.5)} />
           ))}
         </div>
       </section>

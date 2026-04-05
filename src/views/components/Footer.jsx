@@ -1,6 +1,87 @@
 // src/views/components/Footer.jsx
 
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+
+/* ─── Styles d'animation ─────────────────────────────────── */
+const STYLES = `
+  @keyframes footerLogoIn {
+    from { opacity: 0; transform: translateX(-24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes footerTaglineIn {
+    from { opacity: 0; transform: translateX(-16px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes footerColIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes footerCopyIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes logoBreath {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.025); }
+  }
+
+  .footer-logo {
+    animation: footerLogoIn .6s ease both;
+    transition: transform .3s ease;
+  }
+  .footer-logo:hover {
+    animation: logoBreath 2.8s ease-in-out infinite !important;
+  }
+  .footer-tagline {
+    animation: footerTaglineIn .55s ease .12s both;
+  }
+  .footer-sub {
+    animation: footerTaglineIn .5s ease .22s both;
+  }
+  .footer-col {
+    animation: footerColIn .55s ease both;
+  }
+  .footer-col:nth-child(1) { animation-delay: .15s; }
+  .footer-col:nth-child(2) { animation-delay: .25s; }
+  .footer-col:nth-child(3) { animation-delay: .35s; }
+
+  .footer-link {
+    position: relative;
+    display: block;
+    text-decoration: none;
+    transition: color .2s ease;
+  }
+  .footer-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 0; height: 1px;
+    background: white;
+    transition: width .25s ease;
+  }
+  .footer-link:hover::after { width: 100%; }
+
+  .footer-social-link {
+    text-decoration: none;
+    transition: color .2s ease, transform .25s ease;
+    display: flex; align-items: center; gap: .75rem;
+  }
+  .footer-social-link:hover {
+    color: white !important;
+    transform: translateX(5px);
+  }
+  .footer-social-icon {
+    transition: transform .25s ease;
+    flex-shrink: 0;
+  }
+  .footer-social-link:hover .footer-social-icon {
+    transform: scale(1.2);
+  }
+  .footer-copy {
+    animation: footerCopyIn .5s ease .45s both;
+  }
+`
 
 const SOCIAL = [
   {
@@ -35,23 +116,30 @@ const SOCIAL = [
 ]
 
 export default function Footer() {
+  useEffect(() => {
+    const id = '__footer-styles__'
+    if (!document.getElementById(id)) {
+      const el = document.createElement('style')
+      el.id = id
+      el.textContent = STYLES
+      document.head.appendChild(el)
+    }
+  }, [])
+
   return (
     <footer style={{ background: '#1a3c2e', color: 'rgba(255,255,255,.75)' }}>
 
       {/* ── Logo + Tagline ── */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0rem 4rem 0',
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '0rem 4rem 0' }}>
         <img
           src="/images/Footer/img_01.png"
           alt="Thé Tip Top"
+          className="footer-logo"
           style={{ height: 260, width: 'auto', flexShrink: 0 }}
           onError={e => { e.target.style.display = 'none' }}
         />
         <div>
-          <p style={{
+          <p className="footer-tagline" style={{
             fontFamily: 'var(--font-serif)',
             fontWeight: 700,
             fontSize: '1.55rem',
@@ -61,7 +149,7 @@ export default function Footer() {
           }}>
             Maison française de thés<br />biologiques et artisanaux.
           </p>
-          <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,.55)' }}>
+          <p className="footer-sub" style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,.55)' }}>
             Créations signatures, infusions bien-être et thés premium.
           </p>
         </div>
@@ -74,26 +162,26 @@ export default function Footer() {
         gap: '2rem',
         padding: '0 10rem',
       }}>
-        {/* Jeu-concours */}
-        <div>
+        <div className="footer-col">
           <h4 style={{ color: 'white', fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
-            Jeu-consours
+            Jeu-concours
           </h4>
           {[
             { to: '/jeu',     label: 'Présentation du jeu' },
             { to: '/gains',   label: 'Lots à gagner' },
             { to: '/contact', label: 'Nous Contacter' },
           ].map(({ to, label }) => (
-            <Link key={to} to={to} style={{ display: 'block', padding: '0.2rem 0', fontSize: '0.88rem', color: 'rgba(255,255,255,.6)' }}
-              onMouseEnter={e => e.target.style.color = 'white'}
-              onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,.6)'}>
+            <Link key={to} to={to}
+              className="footer-link"
+              style={{ padding: '0.2rem 0', fontSize: '0.88rem', color: 'rgba(255,255,255,.6)' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'white'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,.6)'}>
               {label}
             </Link>
           ))}
         </div>
 
-        {/* Informations légales */}
-        <div>
+        <div className="footer-col">
           <h4 style={{ color: 'white', fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
             Informations légales
           </h4>
@@ -101,28 +189,27 @@ export default function Footer() {
             { to: '/politique', label: 'Politique de confidentialité' },
             { to: '/cgu',       label: 'CGU' },
           ].map(({ to, label }) => (
-            <Link key={to} to={to} style={{ display: 'block', padding: '0.2rem 0', fontSize: '0.88rem', color: 'rgba(255,255,255,.6)' }}
-              onMouseEnter={e => e.target.style.color = 'white'}
-              onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,.6)'}>
+            <Link key={to} to={to}
+              className="footer-link"
+              style={{ padding: '0.2rem 0', fontSize: '0.88rem', color: 'rgba(255,255,255,.6)' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'white'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,.6)'}>
               {label}
             </Link>
           ))}
         </div>
 
-        {/* Suivez-nous */}
-        <div>
+        <div className="footer-col">
           <h4 style={{ color: 'white', fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
             Suivez-nous !
           </h4>
           {SOCIAL.map(({ label, href, icon }) => (
-            <a key={label} href={href} style={{
-              display: 'flex', alignItems: 'center', gap: '0.75rem',
-              padding: '0.3rem 0', fontSize: '0.88rem',
-              color: 'rgba(255,255,255,.6)', textDecoration: 'none',
-            }}
+            <a key={label} href={href}
+              className="footer-social-link"
+              style={{ padding: '0.3rem 0', fontSize: '0.88rem', color: 'rgba(255,255,255,.6)' }}
               onMouseEnter={e => { e.currentTarget.style.color = 'white' }}
               onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,.6)' }}>
-              {icon}
+              <span className="footer-social-icon">{icon}</span>
               {label}
             </a>
           ))}
@@ -130,7 +217,7 @@ export default function Footer() {
       </div>
 
       {/* ── Copyright ── */}
-      <div style={{ padding: '0.75rem 4rem 1.5rem', textAlign: 'right', fontSize: '0.82rem', color: 'rgba(255,255,255,.35)' }}>
+      <div className="footer-copy" style={{ padding: '0.75rem 4rem 1.5rem', textAlign: 'right', fontSize: '0.82rem', color: 'rgba(255,255,255,.35)' }}>
         © {new Date().getFullYear()} – Thé Tip Top. Tous droits réservés.
       </div>
 
