@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: Deploy Frontend to VPS
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Staging
+    name: Deploy Frontend
     runs-on: ubuntu-latest
 
     steps:
@@ -26,26 +26,32 @@ jobs:
 
       - name: Deploy to VPS
         run: |
-          ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << EOF
+          ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
           set -e
 
-          echo "📦 Préparation du déploiement..."
-          cd /home/deploy/tea-app-web || exit 1
+          echo "📦 Déploiement FRONTEND..."
+
+          cd /home/deploy/tea-app-web-staging || exit 1
 
           echo "🔄 Mise à jour du code..."
           git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
           git fetch origin
           git reset --hard origin/${{ github.ref_name }}
 
-          echo "⚙️ Configuration de l'environnement..."
-          cat > .env << 'ENVEOF'
-          VITE_API_URL=https://${{ secrets.VITE_API_URL }}
+          echo "⚙️ Génération .env (build-time)..."
+          cat > .env << ENVEOF
+          VITE_API_URL=${{ secrets.VITE_API_URL }}
           ENVEOF
 
-          # Rebuilder et démarrer
-          echo "🚀 Démarrage des nouveaux conteneurs..."
-          docker compose -f docker-compose.app.prod.yml up -d --build
+          echo "🧹 Nettoyage ancien build..."
+          docker compose -f docker-compose.front.prod.yml down
+
+          echo "🏗️ Build + lancement..."
+          docker compose -f docker-compose.front.prod.yml up -d --build
+
+          echo "🧽 Nettoyage images inutiles..."
+          docker image prune -f
 
           echo ""
-          echo "✅ Déploiement terminé !"
+          echo "✅ Frontend déployé avec succès"
           EOF

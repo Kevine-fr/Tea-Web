@@ -1,51 +1,69 @@
-name: Deploy to VPS
+name: 🚀 Deploy Frontend to VPS
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy to Production
+    name: Deploy Frontend → OVH VPS
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout code
+
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+          host:        ${{ secrets.VPS_HOST }}
+          username:    ${{ secrets.VPS_USER }}
+          key:         ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          envs:        ENV_FILE
+          script: |
+            echo "──────────────────────────────────────────"
+            echo "  📦  Pull du code FRONTEND"
+            echo "──────────────────────────────────────────"
+            cd ~/deploy/tea-app-web || exit 1
+            git pull origin main
 
-      - name: Add VPS to known hosts
+            echo "──────────────────────────────────────────"
+            echo "  📝  Génération du .env (build React)"
+            echo "──────────────────────────────────────────"
+            printf '%s' "$ENV_FILE" > .env
+
+            echo "──────────────────────────────────────────"
+            echo "  🐳  Restart container React"
+            echo "──────────────────────────────────────────"
+            docker compose -f docker-compose.front.prod.yml down
+            docker compose -f docker-compose.front.prod.yml up -d --build
+
+            echo "──────────────────────────────────────────"
+            echo "  ⏳  Attente démarrage (10s)"
+            echo "──────────────────────────────────────────"
+            sleep 10
+
+            echo "──────────────────────────────────────────"
+            echo "  🔍  Vérification container"
+            echo "──────────────────────────────────────────"
+            docker ps | grep tea_web || (echo "❌ Container React non démarré" && exit 1)
+
+            echo "──────────────────────────────────────────"
+            echo "  🧹  Nettoyage images Docker"
+            echo "──────────────────────────────────────────"
+            docker image prune -f
+
+            echo ""
+            echo "✅  Frontend déployé avec succès !"
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+
+      - name: Notify on failure
+        if: failure()
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy to VPS
-        run: |
-          ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << EOF
-          set -e
-
-          echo "📦 Préparation du déploiement..."
-          cd /home/deploy/tea-app-web || exit 1
-
-          echo "🔄 Mise à jour du code..."
-          git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
-          git fetch origin
-          git reset --hard origin/${{ github.ref_name }}
-
-          echo "⚙️ Configuration de l'environnement..."
-          cat > .env << 'ENVEOF'
-          VITE_API_URL=https://${{ secrets.VITE_API_URL }}
-          ENVEOF
-
-          # Rebuilder et démarrer
-          echo "🚀 Démarrage des nouveaux conteneurs..."
-          docker compose -f docker-compose.app.prod.yml up -d --build
-
-          echo ""
-          echo "✅ Déploiement terminé !"
-          EOF
+          echo "❌ Le déploiement frontend a échoué — vérifiez les logs."
