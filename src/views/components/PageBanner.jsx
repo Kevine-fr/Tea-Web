@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import AnimatedLeaves from './AnimatedLeaves.jsx'
 
-/* ─── Styles d'animation ─────────────────────────────────── */
 const STYLES = `
   @keyframes bannerFadeDown {
     from { opacity: 0; transform: translateY(-18px); }
@@ -30,12 +29,10 @@ const STYLES = `
     50%       { transform: translateY(-5px) rotate(2deg); }
   }
 
-  /* ── Conteneur banner ── */
   .page-banner-content {
     animation: bannerFadeDown .5s cubic-bezier(.22,.68,0,1.1) both;
   }
 
-  /* ── Feuille gauche ── */
   .banner-leaf-left {
     animation: leafSwingL .65s cubic-bezier(.22,.68,0,1.1) .1s both;
   }
@@ -43,7 +40,6 @@ const STYLES = `
     animation: leafFloat 2.6s ease-in-out infinite !important;
   }
 
-  /* ── Feuille droite ── */
   .banner-leaf-right {
     animation: leafSwingR .65s cubic-bezier(.22,.68,0,1.1) .1s both;
   }
@@ -51,9 +47,40 @@ const STYLES = `
     animation: leafFloatR 2.6s ease-in-out infinite !important;
   }
 
-  /* ── Badge titre ── */
   .page-banner-badge {
     animation: badgeSlideUp .5s ease .15s both;
+  }
+
+  /* ── Responsive ── */
+  .page-banner-content {
+    padding: 0.5rem 10rem;
+    margin: 0 8rem;
+  }
+  @media (max-width: 1100px) {
+    .page-banner-content {
+      padding: 0.5rem 3rem !important;
+      margin: 0 2rem !important;
+    }
+  }
+  @media (max-width: 768px) {
+    .page-banner-content {
+      padding: 0.75rem 1rem !important;
+      margin: 0 1rem !important;
+    }
+    .banner-leaf-left,
+    .banner-leaf-right {
+      width: 14% !important;
+    }
+  }
+  @media (max-width: 480px) {
+    .banner-leaf-left,
+    .banner-leaf-right {
+      display: none !important;
+    }
+    .page-banner-content {
+      justify-content: center !important;
+      padding: 0.75rem 1.25rem !important;
+    }
   }
 `
 
@@ -80,29 +107,25 @@ export default function PageBanner({ title }) {
           alignItems: 'center',
           backgroundColor: '#EEE1CE',
           width: '100%',
-          padding: '0.5rem 10rem',
-          margin: '0 8rem',
           borderRadius: '25px',
           boxShadow: '0 10px 30px rgba(0, 0, 0, 0.12)',
+          boxSizing: 'border-box',
         }}
       >
-        {/* Feuille gauche */}
         <img
           src="/images/Jeu/img_02.png"
           alt=""
           className="banner-leaf-left"
-          style={{ width: '10%', opacity: 0.85, transform: 'scaleX(-1)' }}
+          style={{ width: '10%', opacity: 0.85, transform: 'scaleX(-1)', flexShrink: 0 }}
         />
 
-        {/* Badge titre */}
-        <div className="page-banner-badge">{title}</div>
+        <div className="page-banner-badge" style={{ textAlign: 'center', flex: 1 }}>{title}</div>
 
-        {/* Feuille droite */}
         <img
           src="/images/Jeu/img_02.png"
           alt=""
           className="banner-leaf-right"
-          style={{ width: '10%', opacity: 0.85 }}
+          style={{ width: '10%', opacity: 0.85, flexShrink: 0 }}
         />
       </div>
     </div>

@@ -3,7 +3,6 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import toast from 'react-hot-toast'
 
-/* ─── Styles d'animation ─────────────────────────────────── */
 const STYLES = `
   @keyframes navbarSlideDown {
     from { opacity: 0; transform: translateY(-100%); }
@@ -26,12 +25,10 @@ const STYLES = `
     50%       { transform: scale(1.06); }
   }
 
-  /* ── Barre nav ── */
   .navbar-bar {
     animation: navbarSlideDown .45s cubic-bezier(.22,.68,0,1.1) both;
   }
 
-  /* ── Logo ── */
   .navbar-logo img {
     animation: navLogoIn .5s cubic-bezier(.22,.68,0,1.2) .1s both;
     transition: transform .3s ease;
@@ -40,7 +37,6 @@ const STYLES = `
     animation: logoBreath 2s ease-in-out infinite !important;
   }
 
-  /* ── Liens de nav : entrée échelonnée ── */
   .nav-link-item {
     animation: navLinkIn .4s ease both;
   }
@@ -48,7 +44,6 @@ const STYLES = `
   .nav-link-item:nth-child(2) { animation-delay: .14s; }
   .nav-link-item:nth-child(3) { animation-delay: .20s; }
 
-  /* ── Hover underline slide sur les liens ── */
   .nav-link-animated {
     position: relative;
   }
@@ -65,7 +60,6 @@ const STYLES = `
     width: 100%;
   }
 
-  /* ── Bouton déconnexion hover ── */
   .nav-logout-btn {
     transition: color .2s ease, transform .2s ease;
   }
@@ -74,17 +68,33 @@ const STYLES = `
     transform: translateX(2px);
   }
 
-  /* ── Drawer mobile ── */
   .navbar-drawer {
     animation: drawerSlideDown .3s ease both;
   }
 
-  /* ── Burger ── */
   .burger-btn {
     transition: transform .2s ease;
   }
   .burger-btn:hover {
     transform: scale(1.15);
+  }
+
+  /* ── Desktop : liens visibles, burger caché ── */
+  .hide-mobile { display: flex !important; }
+  .burger-btn  { display: none !important; }
+
+  /* ── Tablette : réduire les gaps ── */
+  @media (max-width: 1100px) {
+    .navbar-inner { padding: 0 2rem !important; }
+    .nav-links-left  { gap: 2rem !important; }
+    .nav-links-right { gap: 2rem !important; }
+  }
+
+  /* ── Mobile : cacher liens, afficher burger ── */
+  @media (max-width: 768px) {
+    .hide-mobile { display: none !important; }
+    .burger-btn  { display: block !important; }
+    .navbar-inner { padding: 0 1.25rem !important; }
   }
 `
 
@@ -128,14 +138,19 @@ export default function Navbar() {
       position: 'sticky', top: 0, zIndex: 200,
       boxShadow: '0 1px 8px rgba(0,0,0,.05)',
     }}>
-      <div style={{
-        margin: '0 auto', padding: '0 10.5rem',
+      <div className="navbar-inner" style={{
+        margin: '0 auto',
+        padding: '0 10.5rem',
         height: 68,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
 
         {/* ── Left nav links ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15rem', flex: 1 }}>
+        <div className="nav-links-left" style={{
+          display: 'flex', alignItems: 'center',
+          gap: '3rem',
+          flex: 1,
+        }}>
           {[
             { to: '/',      label: 'Accueil' },
             { to: '/jeu',   label: 'Jeu' },
@@ -150,7 +165,10 @@ export default function Navbar() {
         </div>
 
         {/* ── Center logo ── */}
-        <Link to="/" className="navbar-logo" style={{ flexShrink: 0, margin: '0 1.5rem', display: 'flex', alignItems: 'center' }}>
+        <Link to="/" className="navbar-logo" style={{
+          flexShrink: 0, margin: '0 1.5rem',
+          display: 'flex', alignItems: 'center',
+        }}>
           <img
             src="/images/Header/img_01.png"
             alt="Thé Tip Top"
@@ -172,7 +190,11 @@ export default function Navbar() {
         </Link>
 
         {/* ── Right nav links ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15rem', flex: 1, justifyContent: 'flex-end' }}>
+        <div className="nav-links-right" style={{
+          display: 'flex', alignItems: 'center',
+          gap: '3rem',
+          flex: 1, justifyContent: 'flex-end',
+        }}>
           {user ? (
             <>
               {isAdmin
@@ -215,9 +237,19 @@ export default function Navbar() {
           )}
 
           {/* Burger */}
-          <button onClick={() => setOpen(!open)} aria-label="Menu"
-            style={{ display: 'none', fontSize: '1.4rem', color: 'var(--green-dark)', padding: '0.25rem' }}
-            className="burger-btn">
+          <button
+            onClick={() => setOpen(!open)}
+            aria-label="Menu"
+            className="burger-btn"
+            style={{
+              fontSize: '1.4rem',
+              color: 'var(--green-dark)',
+              padding: '0.25rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
             {open ? '✕' : '☰'}
           </button>
         </div>
@@ -238,7 +270,15 @@ export default function Navbar() {
             { to: '/contact', label: 'Contact' },
           ].map(({ to, label }) => (
             <Link key={to} to={to} onClick={() => setOpen(false)}
-              style={{ display: 'block', padding: '0.75rem 0', borderBottom: '1px solid var(--cream-border)', fontSize: '0.95rem', fontWeight: 500 }}>
+              style={{
+                display: 'block',
+                padding: '0.75rem 0',
+                borderBottom: '1px solid var(--cream-border)',
+                fontSize: '0.95rem',
+                fontWeight: 500,
+                color: 'var(--text-dark)',
+                textDecoration: 'none',
+              }}>
               {label}
             </Link>
           ))}
@@ -256,8 +296,6 @@ export default function Navbar() {
           )}
         </div>
       )}
-
-      <style>{`@media(max-width:768px){.burger-btn{display:block!important}}`}</style>
     </nav>
   )
 }

@@ -6,7 +6,6 @@ import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
 import toast from 'react-hot-toast'
 
-/* ─── Styles d'animation ─────────────────────────────────── */
 const STYLES = `
   @keyframes slideUp {
     from { opacity: 0; transform: translateY(28px); }
@@ -41,17 +40,9 @@ const STYLES = `
     to   { width: 48px; }
   }
 
-  /* ── Header section ── */
-  .login-header {
-    animation: slideUp .5s ease both;
-  }
+  .login-header { animation: slideUp .5s ease both; }
+  .login-card   { animation: slideInLeft .6s ease .1s both; }
 
-  /* ── Carte formulaire (à gauche) ── */
-  .login-card {
-    animation: slideInLeft .6s ease .1s both;
-  }
-
-  /* ── Image (à droite) ── */
   .login-img-col {
     animation: slideInRight .6s ease .15s both;
     position: relative;
@@ -62,26 +53,19 @@ const STYLES = `
     display: block;
     transition: transform .6s cubic-bezier(.25,.46,.45,.94);
   }
-  .login-img-col:hover img {
-    transform: scale(1.04);
-  }
+  .login-img-col:hover img { transform: scale(1.04); }
   .login-img-col::after {
     content: '';
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background: linear-gradient(to top, rgba(0,0,0,.18) 0%, transparent 55%);
     border-radius: var(--radius);
     pointer-events: none;
   }
 
-  /* ── Champs avec entrée échelonnée ── */
-  .login-field {
-    animation: slideUp .5s ease both;
-  }
+  .login-field { animation: slideUp .5s ease both; }
   .login-field:nth-of-type(1) { animation-delay: .22s; }
   .login-field:nth-of-type(2) { animation-delay: .32s; }
 
-  /* ── Focus glow sur les inputs ── */
   .login-input {
     transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
   }
@@ -96,10 +80,8 @@ const STYLES = `
     box-shadow: 0 0 0 3px rgba(224,84,84,.12);
   }
 
-  /* ── Bouton principal ── */
   .login-btn-primary {
-    position: relative;
-    overflow: hidden;
+    position: relative; overflow: hidden;
     transition: transform .2s ease, box-shadow .2s ease;
     animation: slideUp .45s ease .42s both;
   }
@@ -108,29 +90,20 @@ const STYLES = `
     box-shadow: 0 8px 24px rgba(200,100,40,.35);
     animation: pulse-ring 1.4s ease-out infinite;
   }
-  .login-btn-primary:not(:disabled):active {
-    transform: translateY(0);
-  }
+  .login-btn-primary:not(:disabled):active { transform: translateY(0); }
   .login-btn-primary::after {
     content: '';
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
     background-size: 200% 100%;
-    opacity: 0;
-    transition: opacity .2s;
+    opacity: 0; transition: opacity .2s;
   }
   .login-btn-primary:not(:disabled):hover::after {
-    opacity: 1;
-    animation: shimmer 1s linear infinite;
+    opacity: 1; animation: shimmer 1s linear infinite;
   }
 
-  /* ── Alerte erreur serveur ── */
-  .login-alert-err {
-    animation: alertShake .45s ease both;
-  }
+  .login-alert-err { animation: alertShake .45s ease both; }
 
-  /* ── Boutons sociaux ── */
   .login-btn-social {
     transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
     animation: slideUp .4s ease both;
@@ -143,10 +116,8 @@ const STYLES = `
     background: rgba(var(--green-rgb,80,120,60),.04) !important;
   }
 
-  /* ── Lien "S'inscrire" ── */
   .login-register-link a {
-    position: relative;
-    text-decoration: none;
+    position: relative; text-decoration: none;
   }
   .login-register-link a::after {
     content: '';
@@ -157,13 +128,31 @@ const STYLES = `
     border-radius: 2px;
     transition: width .25s ease;
   }
-  .login-register-link a:hover::after {
-    width: 100%;
-  }
+  .login-register-link a:hover::after { width: 100%; }
 
-  /* ── Divider "ou" ── */
-  .login-divider {
-    animation: slideUp .35s ease .48s both;
+  .login-divider { animation: slideUp .35s ease .48s both; }
+
+  /* ── Grille responsive ── */
+  .auth-grid-login {
+    display: grid;
+    grid-template-columns: 1fr 500px;
+    gap: 2rem;
+    align-items: start;
+    padding: 0 8rem;
+  }
+  @media (max-width: 1024px) {
+    .auth-grid-login { padding: 0 3rem; grid-template-columns: 1fr 420px; }
+  }
+  @media (max-width: 768px) {
+    .auth-grid-login {
+      grid-template-columns: 1fr;
+      padding: 0 1.5rem;
+    }
+    .login-img-col { display: none; }
+  }
+  @media (max-width: 480px) {
+    .auth-grid-login { padding: 0 1rem; }
+    .login-card > div[style] { padding: 1.5rem !important; }
   }
 `
 
@@ -176,7 +165,6 @@ export default function LoginPage() {
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm()
 
-  /* Inject styles once */
   useEffect(() => {
     const id = '__login-styles__'
     if (!document.getElementById(id)) {
@@ -214,7 +202,6 @@ export default function LoginPage() {
 
       <section style={{ background: 'var(--cream)', padding: '2.5rem 1.5rem 4rem' }}>
 
-        {/* ── En-tête ── */}
         <div className="container login-header" style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <h2 style={{ marginBottom: '0.5rem' }}>Pause Thé !</h2>
           <p style={{ color: 'var(--text-muted)', maxWidth: 540, margin: '0 auto', fontSize: '0.92rem', lineHeight: 1.7 }}>
@@ -222,22 +209,14 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* ── Grille ── */}
-        <div className="auth-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 500px',
-          gap: '2rem',
-          alignItems: 'start',
-          padding: "0 8rem"
-        }}>
+        <div className="auth-grid-login">
 
-          {/* ── Formulaire ── */}
+          {/* Formulaire */}
           <div className="card login-card" style={{ padding: '2.5rem' }}>
             <h3 style={{ textAlign: 'center', marginBottom: '1.75rem', fontSize: '1.1rem' }}>
               Formulaire de connexion
             </h3>
 
-            {/* Erreur serveur avec shake */}
             {srvErr && (
               <div key={srvErr} className="alert alert-err login-alert-err">
                 {srvErr}
@@ -245,8 +224,6 @@ export default function LoginPage() {
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
-
-              {/* Identifiant */}
               <div className="form-field login-field">
                 <label>Identifiant</label>
                 <input
@@ -262,7 +239,6 @@ export default function LoginPage() {
                 {errors.email && <p className="err">{errors.email.message}</p>}
               </div>
 
-              {/* Mot de passe */}
               <div className="form-field login-field">
                 <label>Mot de passe</label>
                 <input
@@ -278,7 +254,6 @@ export default function LoginPage() {
                 {errors.password && <p className="err">{errors.password.message}</p>}
               </div>
 
-              {/* Lien inscription */}
               <p className="login-register-link" style={{
                 fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem',
               }}>
@@ -288,7 +263,6 @@ export default function LoginPage() {
                 </Link>
               </p>
 
-              {/* Submit */}
               <button
                 type="submit"
                 className="btn btn-orange login-btn-primary"
@@ -318,7 +292,7 @@ export default function LoginPage() {
             </form>
           </div>
 
-          {/* ── Image ── */}
+          {/* Image */}
           <div className="auth-img-col login-img-col">
             <img
               src="/images/Connexion/img_01.png"

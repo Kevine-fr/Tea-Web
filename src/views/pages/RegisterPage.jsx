@@ -6,7 +6,6 @@ import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
 import toast from 'react-hot-toast'
 
-/* ─── Styles d'animation ─────────────────────────────────── */
 const STYLES = `
   @keyframes slideUp {
     from { opacity: 0; transform: translateY(28px); }
@@ -35,44 +34,29 @@ const STYLES = `
     100% { transform: scale(1); opacity: 1; }
   }
 
-  /* ── Header section ── */
-  .reg-header {
-    animation: slideUp .55s ease both;
-  }
+  .reg-header { animation: slideUp .55s ease both; }
 
-  /* ── Image colonne ── */
   .reg-img-col {
     animation: slideInLeft .6s ease .1s both;
-    position: relative;
-    overflow: hidden;
+    position: relative; overflow: hidden;
     border-radius: var(--radius);
   }
   .reg-img-col img {
     transition: transform .6s cubic-bezier(.25,.46,.45,.94);
     display: block;
   }
-  .reg-img-col:hover img {
-    transform: scale(1.04);
-  }
-  /* overlay subtil */
+  .reg-img-col:hover img { transform: scale(1.04); }
   .reg-img-col::after {
     content: '';
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background: linear-gradient(to top, rgba(0,0,0,.15) 0%, transparent 50%);
     border-radius: var(--radius);
     pointer-events: none;
   }
 
-  /* ── Carte formulaire ── */
-  .reg-card {
-    animation: slideInRight .6s ease .15s both;
-  }
+  .reg-card { animation: slideInRight .6s ease .15s both; }
 
-  /* ── Champs avec animation d'entrée échelonnée ── */
-  .reg-field {
-    animation: slideUp .5s ease both;
-  }
+  .reg-field { animation: slideUp .5s ease both; }
   .reg-field:nth-child(1) { animation-delay: .2s; }
   .reg-field:nth-child(2) { animation-delay: .27s; }
   .reg-field:nth-child(3) { animation-delay: .34s; }
@@ -80,7 +64,6 @@ const STYLES = `
   .reg-field:nth-child(5) { animation-delay: .48s; }
   .reg-field:nth-child(6) { animation-delay: .55s; }
 
-  /* ── Input focus glow ── */
   .reg-input {
     transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
   }
@@ -95,7 +78,6 @@ const STYLES = `
     box-shadow: 0 0 0 3px rgba(224,84,84,.12);
   }
 
-  /* ── Checkbox animée ── */
   .reg-checkbox-wrap input[type="checkbox"] {
     transition: transform .15s ease;
   }
@@ -103,10 +85,8 @@ const STYLES = `
     animation: checkPop .25s ease forwards;
   }
 
-  /* ── Bouton principal ── */
   .reg-btn-primary {
-    position: relative;
-    overflow: hidden;
+    position: relative; overflow: hidden;
     transition: transform .2s ease, box-shadow .2s ease;
   }
   .reg-btn-primary:not(:disabled):hover {
@@ -114,24 +94,18 @@ const STYLES = `
     box-shadow: 0 8px 24px rgba(200,100,40,.35);
     animation: pulse-ring 1.4s ease-out infinite;
   }
-  .reg-btn-primary:not(:disabled):active {
-    transform: translateY(0);
-  }
+  .reg-btn-primary:not(:disabled):active { transform: translateY(0); }
   .reg-btn-primary::after {
     content: '';
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
     background-size: 200% 100%;
-    opacity: 0;
-    transition: opacity .2s;
+    opacity: 0; transition: opacity .2s;
   }
   .reg-btn-primary:not(:disabled):hover::after {
-    opacity: 1;
-    animation: shimmer 1s linear infinite;
+    opacity: 1; animation: shimmer 1s linear infinite;
   }
 
-  /* ── Boutons sociaux ── */
   .reg-btn-social {
     transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
   }
@@ -141,14 +115,37 @@ const STYLES = `
     background: rgba(var(--green-rgb,80,120,60),.04) !important;
   }
 
-  /* ── Divider "ou" ── */
-  .reg-divider {
-    animation: slideUp .4s ease .6s both;
+  .reg-divider { animation: slideUp .4s ease .6s both; }
+  .reg-login-link { animation: slideUp .4s ease .65s both; }
+
+  /* ── Grille responsive ── */
+  .auth-grid-register {
+    display: grid;
+    grid-template-columns: 500px 1fr;
+    gap: 2rem;
+    align-items: start;
+    padding: 0 8rem;
+  }
+  @media (max-width: 1024px) {
+    .auth-grid-register { padding: 0 3rem; grid-template-columns: 380px 1fr; }
+  }
+  @media (max-width: 768px) {
+    .auth-grid-register {
+      grid-template-columns: 1fr;
+      padding: 0 1.5rem;
+    }
+    .reg-img-col { display: none; }
+  }
+  @media (max-width: 480px) {
+    .auth-grid-register { padding: 0 1rem; }
   }
 
-  /* ── Lien connexion ── */
-  .reg-login-link {
-    animation: slideUp .4s ease .65s both;
+  /* Grille Nom/Prénom et mots de passe : colonne sur très petit écran */
+  @media (max-width: 420px) {
+    .reg-name-grid,
+    .reg-pwd-grid {
+      grid-template-columns: 1fr !important;
+    }
   }
 `
 
@@ -160,7 +157,6 @@ export default function RegisterPage() {
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm()
   const password = watch('password')
 
-  /* Inject styles once */
   useEffect(() => {
     const id = '__reg-styles__'
     if (!document.getElementById(id)) {
@@ -197,7 +193,6 @@ export default function RegisterPage() {
 
       <section style={{ background: 'var(--cream)', padding: '2.5rem 1.5rem 4rem' }}>
 
-        {/* ── En-tête ── */}
         <div className="container reg-header" style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <h2>Bienvenue dans l'aventure Thé Tip Top</h2>
           <p style={{ color: 'var(--text-muted)', maxWidth: 540, margin: '0.5rem auto 0', fontSize: '0.92rem', lineHeight: 1.7 }}>
@@ -205,16 +200,9 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* ── Grille ── */}
-        <div className="auth-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: '500px 1fr',
-          gap: '2rem',
-          alignItems: 'start',
-          padding: "0 8rem"
-        }}>
+        <div className="auth-grid-register">
 
-          {/* ── Image ── */}
+          {/* Image */}
           <div className="auth-img-col reg-img-col">
             <img
               src="/images/Inscription/img_01.png"
@@ -223,7 +211,7 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* ── Formulaire ── */}
+          {/* Formulaire */}
           <div className="card reg-card" style={{ padding: '2.5rem' }}>
             <h3 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.1rem' }}>
               Inscrivez-vous au Jeu-concours !
@@ -232,7 +220,7 @@ export default function RegisterPage() {
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
 
               {/* Nom / Prénom */}
-              <div className="reg-field" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className="reg-field reg-name-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div className="form-field">
                   <input type="text" placeholder="Nom"
                     className={`reg-input${sErr('last_name') ? ' is-err' : ''}`}
@@ -259,7 +247,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Mots de passe */}
-              <div className="reg-field" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className="reg-field reg-pwd-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div className="form-field">
                   <input type="password" placeholder="Mot de passe"
                     className={`reg-input${sErr('password') ? ' is-err' : ''}`}
@@ -305,7 +293,6 @@ export default function RegisterPage() {
                 </label>
               </div>
 
-              {/* Submit */}
               <button type="submit" className="btn btn-orange reg-btn-primary" disabled={isSubmitting}
                 style={{ width: '100%', fontSize: '1rem', padding: '0.85rem' }}>
                 {isSubmitting ? 'Création…' : 'Créer mon compte'}
