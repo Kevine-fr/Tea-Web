@@ -185,11 +185,8 @@ const CSS = `
 function startIdleAfterEntry(el, idleClass, entryDurationMs, finalStyles = {}) {
   if (!el) return
   const timer = setTimeout(() => {
-    // 1. Figer l'état final (opacity, transform…) en inline
     Object.assign(el.style, finalStyles)
-    // 2. Retirer l'animation d'entrée inline
     el.style.animation = ''
-    // 3. Activer la boucle idle via la classe CSS (si fournie)
     if (idleClass) el.classList.add(idleClass)
   }, entryDurationMs)
   return () => clearTimeout(timer)
@@ -300,34 +297,14 @@ export default function HomePage() {
     ]
     seq.forEach(({ el, anim }) => { if (el) el.style.animation = anim })
 
-    /* ── Passage en idle après l'entrée ──────────────────────────────
-       finalStyles : état CSS figé avant de retirer l'animation inline.
-       Sans ça, l'élément revient à son opacity:0 initial du JSX.
-    ─────────────────────────────────────────────────────────────────── */
+    /* ── Passage en idle après l'entrée ── */
     const cleanups = [
-      // cup  : fadeInRight → opacity:1, transform:none
-      startIdleAfterEntry(cupRef.current,   'cup-idle',    1100,
-        { opacity: '1', transform: 'none' }),
-
-      // tin  : fadeInRight → opacity:1, transform:none
-      startIdleAfterEntry(tinRef.current,   'tin-idle',    1300,
-        { opacity: '1', transform: 'none' }),
-
-      // steam: fadeInUpSoft → opacity:0.5, transform:none
-      startIdleAfterEntry(steamRef.current, 'steam-idle',  2100,
-        { opacity: '0.5', transform: 'none' }),
-
-      // ticket: fadeInDown → opacity:1, transform:rotate(-5deg)
-      startIdleAfterEntry(ticketRef.current,'ticket-idle', 1400,
-        { opacity: '1', transform: 'rotate(-5deg)' }),
-
-      // badge: fadeInLeft → opacity:1, transform:none
-      startIdleAfterEntry(badgeRef.current, 'badge-idle',  1200,
-        { opacity: '1', transform: 'none' }),
-
-      // tag: fige opacity:1 après l'entrée pour que le hover:hover ne le fasse pas disparaître
-      startIdleAfterEntry(tagRef.current,   null,           800,
-        { opacity: '1', transform: 'none' }),
+      startIdleAfterEntry(cupRef.current,    'cup-idle',    1100, { opacity: '1', transform: 'none' }),
+      startIdleAfterEntry(tinRef.current,    'tin-idle',    1300, { opacity: '1', transform: 'none' }),
+      startIdleAfterEntry(steamRef.current,  'steam-idle',  2100, { opacity: '0.5', transform: 'none' }),
+      startIdleAfterEntry(ticketRef.current, 'ticket-idle', 1400, { opacity: '1', transform: 'rotate(-5deg)' }),
+      startIdleAfterEntry(badgeRef.current,  'badge-idle',  1200, { opacity: '1', transform: 'none' }),
+      startIdleAfterEntry(tagRef.current,    null,           800,  { opacity: '1', transform: 'none' }),
     ]
     return () => cleanups.forEach(c => c?.())
   }, [])
@@ -354,10 +331,15 @@ export default function HomePage() {
             zIndex: 1, transform: 'rotate(90deg)', pointerEvents: 'none',
           }} />
 
+          {/* ════ HERO CARD ════ */}
           <div style={{
             zIndex: 2,
             padding: isMobile ? '2rem 1.25rem' : '3.5rem 2rem',
-            margin: isMobile ? '1.25rem 1rem 0 1rem' : isTablet ? '2rem 2rem 0 2rem' : '3rem 10rem 0 10rem',
+            margin: isMobile
+              ? '1.25rem 1rem 0 1rem'
+              : isTablet
+                ? '2rem 2rem 0 2rem'
+                : '3rem 10rem 0 10rem',
             position: 'relative', borderRadius: 24,
             background: '#EEE1CE', border: '1px solid #e2d9c8',
             boxShadow: '0 6px 40px rgba(0,0,0,.08)', overflow: 'visible',
@@ -365,6 +347,8 @@ export default function HomePage() {
             gridTemplateColumns: isTablet ? '1fr' : '38% 62%',
             gap: isTablet ? '2rem' : 0,
           }}>
+
+            {/* ── Colonne gauche : texte ── */}
             <div style={{ position: 'relative', zIndex: 2 }}>
               <p ref={tagRef} className="home-tag" style={{
                 fontSize: isMobile ? '1rem' : isTablet ? '1.2rem' : '1.5rem',
@@ -400,14 +384,18 @@ export default function HomePage() {
               </p>
             </div>
 
+            {/* ── Colonne droite : ticket + CTA ──
+                • Desktop  : position absolute, centré dans la zone droite de la grid
+                • Tablet/Mobile : position relative, flux normal sous le texte       */}
             <div style={{
               position: isTablet ? 'relative' : 'absolute',
-              left: isTablet ? 'auto' : '50%',
-              top: isTablet ? 'auto' : '35%',
+              left:      isTablet ? 'auto' : '50%',
+              top:       isTablet ? 'auto' : '35%',
               transform: isTablet ? 'none' : 'translate(-50%, -50%)',
-              zIndex: 8, display: 'flex', flexDirection: 'column',
+              zIndex: 8,
+              display: 'flex', flexDirection: 'column',
               alignItems: 'center', gap: '1.25rem',
-              width: isTablet ? '100%' : 'auto',
+              width:     isTablet ? '100%' : 'auto',
               marginTop: isTablet ? '1rem' : 0,
             }}>
               <div ref={ticketRef} className="home-ticket" style={{
@@ -465,6 +453,7 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* ── Images flottantes — desktop uniquement ── */}
             {!isTablet && (
               <>
                 <img ref={steamRef} className="home-steam" src="/images/Accueil/img_10.png" alt="" style={{
@@ -483,7 +472,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* ── Section steps ── */}
+          {/* ════ SECTION STEPS ════ */}
           <div ref={stepsRef} style={{
             position: 'relative', zIndex: 2,
             margin: isMobile ? '1.5rem 1rem 0 1rem' : isTablet ? '2rem 2rem 0 2rem' : '0 8rem',

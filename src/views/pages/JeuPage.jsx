@@ -66,6 +66,34 @@ const CSS = `
 .jeu-btn:active {
   transform: translateY(-1px);
 }
+
+/* ── Layout responsive ── */
+.jeu-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 3.5rem;
+  align-items: center;
+  padding: 0 8rem;
+}
+@media (max-width: 1024px) {
+  .jeu-inner { padding: 0 3rem; gap: 2.5rem; }
+}
+@media (max-width: 768px) {
+  .jeu-inner {
+    flex-direction: column;
+    padding: 0 1.5rem;
+    gap: 2rem;
+  }
+  .jeu-img-col {
+    width: 100% !important;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+}
+@media (max-width: 480px) {
+  .jeu-inner { padding: 0 1rem; }
+}
 `
 
 export default function JeuPage() {
@@ -93,15 +121,8 @@ export default function JeuPage() {
       <PageBanner title="Jeu-concours" />
 
       <section style={{ position: 'relative', background: 'var(--cream)', padding: '3.5rem 1.5rem 4.5rem', overflow: 'hidden' }}>
-        <div style={{
-          position: 'relative', zIndex: 1,
-          display: 'flex',
-          gridTemplateColumns: '420px 1fr',
-          gap: '3.5rem',
-          alignItems: 'center',
-          padding: "0 8rem"
-        }}>
-          <div ref={imgRef} className="jeu-img-col" style={{ opacity: 0 }}>
+        <div className="jeu-inner">
+          <div ref={imgRef} className="jeu-img-col" style={{ opacity: 0, flexShrink: 0, width: 420 }}>
             <img
               src="/images/Jeu/img_01.png"
               alt="Boutique Thé Tip Top"

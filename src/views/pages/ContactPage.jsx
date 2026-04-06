@@ -8,6 +8,34 @@ import toast from 'react-hot-toast'
 
 const CSS = `
 @keyframes contactIn { from { opacity:0; transform: translateY(28px) } to { opacity:1; transform: none } }
+
+.contact-inner {
+  position: relative;
+  zIndex: 1;
+  padding: 0 8rem;
+}
+@media (max-width: 1024px) {
+  .contact-inner { padding: 0 3rem; }
+}
+@media (max-width: 640px) {
+  .contact-inner { padding: 0 1rem; }
+}
+
+.contact-card {
+  padding: 2.5rem 3rem;
+}
+@media (max-width: 640px) {
+  .contact-card { padding: 1.5rem 1.25rem; }
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+@media (max-width: 480px) {
+  .contact-grid { grid-template-columns: 1fr; }
+}
 `
 
 export default function ContactPage() {
@@ -35,7 +63,7 @@ export default function ContactPage() {
 
       <section style={{ position: 'relative', background: 'var(--cream)', padding: '2.5rem 1.5rem 4rem', overflow: 'hidden' }}>
 
-        <div className="" style={{ position: 'relative', zIndex: 1, padding: "0 8rem" }}>
+        <div className="contact-inner" style={{ position: 'relative', zIndex: 1 }}>
           <div ref={titleRef} style={{ textAlign: 'center', marginBottom: '1.75rem', opacity: 0 }}>
             <h2>Écrivez-nous !</h2>
             <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem', fontSize: '0.92rem', lineHeight: 1.7 }}>
@@ -43,7 +71,7 @@ export default function ContactPage() {
             </p>
           </div>
 
-          <div ref={cardRef} className="card" style={{ padding: '2.5rem 3rem', opacity: 0 }}>
+          <div ref={cardRef} className="card contact-card" style={{ opacity: 0 }}>
             <h3 style={{ textAlign: 'center', marginBottom: '1.75rem', fontSize: '1.15rem' }}>
               Formulaire de contact
             </h3>
@@ -59,7 +87,7 @@ export default function ContactPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="contact-grid">
                   <div className="form-field">
                     <input type="text" placeholder="Nom" className={errors.last_name ? 'is-err' : ''}
                       {...register('last_name', { required: 'Requis' })} />

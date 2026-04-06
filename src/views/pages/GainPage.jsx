@@ -145,6 +145,36 @@ const STYLES = `
     margin: 0.6rem auto 0;
     animation: lineGrow .6s ease forwards;
   }
+
+  /* ── Responsive inner ── */
+  .gain-inner {
+    position: relative;
+    z-index: 1;
+    padding: 0 8rem;
+  }
+  @media (max-width: 1024px) {
+    .gain-inner { padding: 0 3rem; }
+  }
+  @media (max-width: 640px) {
+    .gain-inner { padding: 0 1rem; }
+  }
+
+  /* ── Grille lots responsive ── */
+  .gain-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+    margin-bottom: 3rem;
+  }
+  @media (max-width: 480px) {
+    .gain-grid {
+      grid-template-columns: 1fr;
+    }
+    .prize-card-inner {
+      padding: 3rem 1.25rem 1.5rem;
+    }
+  }
 `
 
 function PrizeCard({ prize, index, delay = 0 }) {
@@ -210,7 +240,7 @@ export default function GainPage() {
           background: 'radial-gradient(circle, rgba(200,100,40,.06) 0%, transparent 70%)',
         }} />
 
-        <div style={{ position: 'relative', zIndex: 1, padding: "0 8rem"}}>
+        <div className="gain-inner">
 
           {/* Titre */}
           <div ref={titleRef} style={{
@@ -236,13 +266,7 @@ export default function GainPage() {
           </div>
 
           {/* Grille 3 lots */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '1.5rem',
-            alignItems: 'start',
-            marginBottom: '3rem',
-          }}>
+          <div className="gain-grid">
             {PRIZES.map((p, i) => (
               <PrizeCard key={i} prize={p} index={i} delay={i * 0.15} />
             ))}

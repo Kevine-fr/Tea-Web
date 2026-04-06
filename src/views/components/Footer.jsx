@@ -3,7 +3,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
-/* ─── Styles d'animation ─────────────────────────────────── */
 const STYLES = `
   @keyframes footerLogoIn {
     from { opacity: 0; transform: translateX(-24px); }
@@ -81,6 +80,47 @@ const STYLES = `
   .footer-copy {
     animation: footerCopyIn .5s ease .45s both;
   }
+
+  /* ── Responsive ── */
+  .footer-hero   { display: flex; align-items: center; padding: 0 4rem; }
+  .footer-grid   { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; padding: 0 10rem; }
+  .footer-bottom { padding: 0.75rem 4rem 1.5rem; text-align: right; }
+
+  /* Tablette */
+  @media (max-width: 1100px) {
+    .footer-hero  { padding: 0 2rem; }
+    .footer-grid  { padding: 0 2rem; gap: 1.5rem; }
+    .footer-bottom { padding: 0.75rem 2rem 1.5rem; }
+  }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    .footer-hero {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 1.5rem 1.5rem 0;
+      gap: 0.75rem;
+    }
+    .footer-logo-img {
+      height: 140px !important;
+    }
+    .footer-grid {
+      grid-template-columns: 1fr !important;
+      padding: 1rem 1.5rem !important;
+      gap: 1.5rem;
+    }
+    .footer-bottom {
+      padding: 0.75rem 1.5rem 1.5rem !important;
+      text-align: center !important;
+    }
+  }
+
+  /* Petit mobile */
+  @media (max-width: 480px) {
+    .footer-hero { padding: 1.25rem 1rem 0; }
+    .footer-grid { padding: 1rem !important; }
+    .footer-bottom { padding: 0.75rem 1rem 1.5rem !important; }
+  }
 `
 
 const SOCIAL = [
@@ -130,11 +170,11 @@ export default function Footer() {
     <footer style={{ background: '#1a3c2e', color: 'rgba(255,255,255,.75)' }}>
 
       {/* ── Logo + Tagline ── */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '0rem 4rem 0' }}>
+      <div className="footer-hero">
         <img
           src="/images/Footer/img_01.png"
           alt="Thé Tip Top"
-          className="footer-logo"
+          className="footer-logo footer-logo-img"
           style={{ height: 260, width: 'auto', flexShrink: 0 }}
           onError={e => { e.target.style.display = 'none' }}
         />
@@ -156,12 +196,7 @@ export default function Footer() {
       </div>
 
       {/* ── 3 colonnes ── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr',
-        gap: '2rem',
-        padding: '0 10rem',
-      }}>
+      <div className="footer-grid">
         <div className="footer-col">
           <h4 style={{ color: 'white', fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
             Jeu-concours
@@ -217,17 +252,12 @@ export default function Footer() {
       </div>
 
       {/* ── Copyright ── */}
-      <div className="footer-copy" style={{ padding: '0.75rem 4rem 1.5rem', textAlign: 'right', fontSize: '0.82rem', color: 'rgba(255,255,255,.35)' }}>
+      <div className="footer-copy footer-bottom" style={{
+        fontSize: '0.82rem',
+        color: 'rgba(255,255,255,.35)',
+      }}>
         © {new Date().getFullYear()} – Thé Tip Top. Tous droits réservés.
       </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          footer > div:first-child { padding: 1.5rem !important; gap: 1.5rem !important; }
-          footer > div:nth-child(2) { grid-template-columns: 1fr !important; padding: 1rem 1.5rem !important; }
-          footer > div:last-child { padding: 0.75rem 1.5rem 1.5rem !important; text-align: center !important; }
-        }
-      `}</style>
     </footer>
   )
 }

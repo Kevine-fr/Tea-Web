@@ -108,6 +108,26 @@ const STYLES = `
     border-radius: 50%;
     pointer-events: none;
   }
+
+  /* ── Responsive inner ── */
+  .gains-inner {
+    position: relative;
+    z-index: 1;
+    padding: 0 8rem;
+  }
+  @media (max-width: 1024px) {
+    .gains-inner { padding: 0 3rem; }
+  }
+  @media (max-width: 640px) {
+    .gains-inner { padding: 0 1rem; }
+  }
+
+  /* ── Tableau responsive ── */
+  @media (max-width: 600px) {
+    .gains-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tbl { min-width: 480px; }
+    .gains-badge { font-size: 0.75rem; padding: 3px 7px; white-space: nowrap; }
+  }
 `
 
 const STATUS = {
@@ -178,7 +198,7 @@ export default function GainsPage() {
           background: 'radial-gradient(circle, rgba(200,100,40,.06) 0%, transparent 70%)',
         }} />
 
-        <div style={{ position: 'relative', zIndex: 1, padding: "0 8rem"}}>
+        <div className="gains-inner">
 
           {/* ── Titre ── */}
           <div ref={titleRef} className="gains-title" style={{ textAlign: 'center' }}>

@@ -61,23 +61,11 @@ const STYLES = `
     to   { width: 48px; }
   }
 
-  /* ── Titre principal ── */
-  .dash-title {
-    animation: slideUp .5s ease both;
-  }
+  .dash-title { animation: slideUp .5s ease both; }
+  .dash-logo-card { animation: slideInLeft .55s ease .1s both; }
+  .dash-logo-card img { animation: logoBreath 3.5s ease-in-out infinite; }
+  .dash-code-card { animation: slideInRight .55s ease .15s both; }
 
-  /* ── Section code ── */
-  .dash-logo-card {
-    animation: slideInLeft .55s ease .1s both;
-  }
-  .dash-logo-card img {
-    animation: logoBreath 3.5s ease-in-out infinite;
-  }
-  .dash-code-card {
-    animation: slideInRight .55s ease .15s both;
-  }
-
-  /* ── Input code ── */
   .dash-code-input {
     transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
     background: white;
@@ -93,7 +81,6 @@ const STYLES = `
     letter-spacing: 0.12em;
   }
 
-  /* ── Bouton valider ── */
   .dash-btn-validate {
     position: relative;
     overflow: hidden;
@@ -104,48 +91,33 @@ const STYLES = `
     box-shadow: 0 8px 24px rgba(200,100,40,.3);
     animation: pulse-ring 1.4s ease-out infinite;
   }
-  .dash-btn-validate:not(:disabled):active {
-    transform: translateY(0);
-  }
+  .dash-btn-validate:not(:disabled):active { transform: translateY(0); }
   .dash-btn-validate::after {
     content: '';
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
     background-size: 200% 100%;
-    opacity: 0;
-    transition: opacity .2s;
+    opacity: 0; transition: opacity .2s;
   }
   .dash-btn-validate:not(:disabled):hover::after {
     opacity: 1;
     animation: shimmer 1s linear infinite;
   }
 
-  /* ── Section participations ── */
-  .dash-participations {
-    animation: slideUp .55s ease .25s both;
-  }
+  .dash-participations { animation: slideUp .55s ease .25s both; }
 
-  /* ── Sous-titre avec underline ── */
   .dash-section-underline {
     display: block;
-    height: 2px;
-    width: 48px;
+    height: 2px; width: 48px;
     background: var(--orange, #c8723a);
     border-radius: 4px;
     margin: 0.4rem auto 1.5rem;
     animation: lineGrow .5s ease .35s both;
   }
 
-  /* ── Lignes tableau ── */
-  .dash-tbl-row {
-    animation: rowIn .4s ease both;
-  }
+  .dash-tbl-row { animation: rowIn .4s ease both; }
+  .s-won { animation: winBadge .4s ease both; }
 
-  /* ── Badges statut ── */
-  .s-won  { animation: winBadge .4s ease both; }
-
-  /* ── État vide ── */
   .dash-empty-icon {
     display: block;
     font-size: 2.4rem;
@@ -153,7 +125,6 @@ const STYLES = `
     animation: emptyFloat 3s ease-in-out infinite;
   }
 
-  /* ── Bouton voir gains ── */
   .dash-btn-gains {
     transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
   }
@@ -162,11 +133,44 @@ const STYLES = `
     box-shadow: 0 8px 20px rgba(80,120,60,.25);
   }
 
-  /* ── Déco fond ── */
   .dash-deco {
     position: absolute;
     border-radius: 50%;
     pointer-events: none;
+  }
+
+  /* ── Responsive ── */
+  .dash-inner {
+    position: relative;
+    z-index: 1;
+    padding: 0 8rem;
+  }
+  @media (max-width: 1024px) {
+    .dash-inner { padding: 0 3rem; }
+  }
+  @media (max-width: 640px) {
+    .dash-inner { padding: 0 1rem; }
+  }
+
+  /* Logo + form : colonne sur mobile */
+  .dash-code-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 1.5rem;
+    align-items: center;
+    margin-bottom: 3rem;
+  }
+  @media (max-width: 640px) {
+    .dash-code-grid {
+      grid-template-columns: 1fr;
+    }
+    .dash-logo-card { display: none; }
+  }
+
+  /* Tableau responsive */
+  @media (max-width: 480px) {
+    .dash-participations { padding: 1.5rem 1rem !important; }
+    .tbl { min-width: 320px; }
   }
 `
 
@@ -192,7 +196,6 @@ export default function DashboardPage() {
   const [submitting, setSubmitting]         = useState(false)
   const [btnRef, btnVis]                    = useReveal()
 
-  /* Inject styles once */
   useEffect(() => {
     const id = '__dash-styles__'
     if (!document.getElementById(id)) {
@@ -236,33 +239,22 @@ export default function DashboardPage() {
 
       <div style={{ position: 'relative', background: 'var(--cream)', padding: '2.5rem 1.5rem 4rem', overflow: 'hidden' }}>
 
-        {/* ── Décorations fond ── */}
         <div className="dash-deco" style={{
-          width: 380, height: 380,
-          top: -120, right: -100,
+          width: 380, height: 380, top: -120, right: -100,
           background: 'radial-gradient(circle, rgba(106,143,90,.07) 0%, transparent 70%)',
         }} />
         <div className="dash-deco" style={{
-          width: 260, height: 260,
-          bottom: -60, left: -60,
+          width: 260, height: 260, bottom: -60, left: -60,
           background: 'radial-gradient(circle, rgba(200,100,40,.06) 0%, transparent 70%)',
         }} />
 
-        <div style={{ position: 'relative', zIndex: 1, padding: "0 8rem"}}>
+        <div className="dash-inner">
 
-          {/* ── Titre ── */}
           <h2 className="dash-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>
             Saisir mon code de participation
           </h2>
 
-          {/* ── Saisie code ── */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '200px 1fr',
-            gap: '1.5rem',
-            alignItems: 'center',
-            marginBottom: '3rem',
-          }}>
+          <div className="dash-code-grid">
             {/* Logo card */}
             <div className="card dash-logo-card" style={{
               padding: '1.5rem',
@@ -290,7 +282,7 @@ export default function DashboardPage() {
                   maxLength={15}
                   className="dash-code-input"
                   style={{
-                    flex: 1, minWidth: 200,
+                    flex: 1, minWidth: 160,
                     padding: '0.75rem 1.25rem',
                     border: '1.5px solid var(--cream-border)',
                     borderRadius: 'var(--radius-pill)',
@@ -310,7 +302,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* ── Mes participations ── */}
+          {/* Participations */}
           <div className="dash-participations" style={{
             background: 'var(--cream-card)',
             borderRadius: 20,
@@ -340,11 +332,7 @@ export default function DashboardPage() {
                   </thead>
                   <tbody>
                     {participations.map((p, i) => (
-                      <tr
-                        key={p.id}
-                        className="dash-tbl-row"
-                        style={{ animationDelay: `${i * 0.06}s` }}
-                      >
+                      <tr key={p.id} className="dash-tbl-row" style={{ animationDelay: `${i * 0.06}s` }}>
                         <td style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.95rem' }}>
                           {p.ticket_code_id ?? p.id?.slice(0, 8) ?? '—'}
                         </td>
