@@ -31,7 +31,7 @@ jobs:
 
           echo "📦 Déploiement FRONTEND..."
 
-          cd /home/deploy/tea-app-web-staging || exit 1
+          cd tea-app-web-staging || exit 1
 
           echo "🔄 Mise à jour du code..."
           git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
