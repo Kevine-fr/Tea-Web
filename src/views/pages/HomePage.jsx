@@ -303,7 +303,6 @@ export default function HomePage() {
       startIdleAfterEntry(tinRef.current,    'tin-idle',    1300, { opacity: '1', transform: 'none' }),
       startIdleAfterEntry(steamRef.current,  'steam-idle',  2100, { opacity: '0.5', transform: 'none' }),
       startIdleAfterEntry(ticketRef.current, 'ticket-idle', 1400, { opacity: '1', transform: 'rotate(-5deg)' }),
-      startIdleAfterEntry(badgeRef.current,  'badge-idle',  1200, { opacity: '1', transform: 'none' }),
       startIdleAfterEntry(tagRef.current,    null,           800,  { opacity: '1', transform: 'none' }),
     ]
     return () => cleanups.forEach(c => c?.())
@@ -359,19 +358,63 @@ export default function HomePage() {
                 PARTICIPEZ AU JEU-CONCOURS
               </p>
 
-              <div ref={badgeRef} className="home-badge" style={{
-                display: 'inline-block', background: '#1a3c2e',
-                borderRadius: 8, padding: isMobile ? '0.45rem 1.2rem' : '0.5rem 1.75rem',
-                marginBottom: '1.1rem', opacity: 0,
-              }}>
-                <span style={{
-                  fontFamily: "'Dancing Script', cursive",
-                  fontSize: isMobile ? '2rem' : '2.5rem',
-                  color: '#fff', fontWeight: 600,
-                }}>
-                  Thé Tip Top
-                </span>
-              </div>
+                <div
+                  ref={badgeRef}
+                  className="home-badge"
+                  style={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: isMobile ? '1.4rem' : '1.2rem',
+                    opacity: 0,
+                    /* padding horizontal = espace texte sur le tape */
+                    padding: isMobile ? '0.55rem 2.8rem' : '0.65rem 3.5rem',
+                    /* min-height pour que le tape soit visible même si texte court */
+                    minHeight: isMobile ? 52 : 60,
+                  }}
+                >
+                  {/* Image tape — rotate(90deg) pour la coucher horizontalement */}
+                  <img
+                    src="/images/Accueil/img_03.png"
+                    alt=""
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      /*
+                       * rotate(90deg) : l'image verticale devient un bandeau horizontal.
+                       * La hauteur CSS de l'img devient la largeur visuelle du tape.
+                       * On la force à 180deg (tel que demandé) pour avoir le bon côté du tape.
+                       * => rotate(90deg) pour horizontaliser + scaleX(-1) si besoin de miroir.
+                       * L'utilisateur demande 180deg → on utilise rotate(180deg) qui
+                       * redresse le tape avec l'autre bout en haut, puis rotate(90deg)
+                       * l'allonge horizontalement : résultat = rotate(90deg) + flip.
+                       */
+                      transform: 'translate(-50%, -50%) rotate(90deg) scaleY(-1)',
+                      /* height CSS = largeur visuelle du tape après rotation */
+                      height: isMobile ? '260px' : '360px',
+                      width: 'auto',
+                      zIndex: 0,
+                      pointerEvents: 'none',
+                      userSelect: 'none',
+                    }}
+                  />
+                  {/* Texte par-dessus le tape */}
+                  <span style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    fontFamily: "'Dancing Script', cursive",
+                    fontSize: isMobile ? '2.1rem' : '2.6rem',
+                    color: '#fff',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    textShadow: '0 1px 4px rgba(0,0,0,.18)',
+                    lineHeight: 1,
+                  }}>
+                    Thé Tip Top
+                  </span>
+                </div>
 
               <p ref={descRef} style={{
                 fontSize: isMobile ? '1rem' : isTablet ? '1.05rem' : '1.2rem',
