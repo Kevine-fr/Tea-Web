@@ -40,8 +40,7 @@ jobs:
             echo "──────────────────────────────────────────"
             echo "  🐳  Restart container React"
             echo "──────────────────────────────────────────"
-            docker compose -f docker-compose.front.prod.yml down
-            docker compose -f docker-compose.front.prod.yml up -d --build
+            docker compose -f docker-compose.prod.yml up -d --build
 
             echo "──────────────────────────────────────────"
             echo "  ⏳  Attente démarrage (10s)"
