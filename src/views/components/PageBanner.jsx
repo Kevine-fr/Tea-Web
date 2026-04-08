@@ -119,8 +119,43 @@ export default function PageBanner({ title }) {
           style={{ width: '10%', opacity: 0.85, transform: 'scaleX(-1)', flexShrink: 0 }}
         />
 
-        <div className="page-banner-badge" style={{ textAlign: 'center', flex: 1 }}>{title}</div>
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+          }}
+        >
+          <img
+            src="/images/Accueil/img_03.png"
+            alt=""
+            style={{   
+              maxHeight: '25rem',    
+              width: 'auto',
+              transform: 'rotate(90deg) scaleY(-1)', 
+              display: 'block',
+            }}
+          />
 
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              color: '#fff',
+              fontFamily: "'Playfair Display', regular",
+              fontSize: '1.5rem',
+              fontStyle: 'italic',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {title}
+          </div>
+        </div>
+        
         <img
           src="/images/Jeu/img_02.png"
           alt=""

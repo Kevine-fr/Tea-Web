@@ -334,7 +334,7 @@ export default function DashboardPage() {
                     {participations.map((p, i) => (
                       <tr key={p.id} className="dash-tbl-row" style={{ animationDelay: `${i * 0.06}s` }}>
                         <td style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.95rem' }}>
-                          {p.ticket_code_id ?? p.id?.slice(0, 8) ?? '—'}
+                          {p.ticket_code.code ?? p.id?.slice(0, 8) ?? '—'}
                         </td>
                         <td>
                           {p.prize_id
