@@ -56,22 +56,22 @@ const STYLES = `
     padding: 0.5rem 10rem;
     margin: 0 8rem;
   }
-  @media (max-width: 1100px) {
-    .page-banner-content {
-      padding: 0.5rem 3rem !important;
-      margin: 0 2rem !important;
-    }
-  }
-  @media (max-width: 768px) {
-    .page-banner-content {
-      padding: 0.75rem 1rem !important;
-      margin: 0 1rem !important;
-    }
-    .banner-leaf-left,
-    .banner-leaf-right {
-      width: 14% !important;
-    }
-  }
+  // @media (max-width: 1100px) {
+  //   .page-banner-content {
+  //     padding: 0.5rem 3rem !important;
+  //     margin: 0 2rem !important;
+  //   }
+  // }
+  // @media (max-width: 768px) {
+  //   .page-banner-content {
+  //     padding: 0.75rem 1rem !important;
+  //     margin: 0 1rem !important;
+  //   }
+  //   .banner-leaf-left,
+  //   .banner-leaf-right {
+  //     width: 14% !important;
+  //   }
+  // }
   
 `
 
@@ -125,7 +125,7 @@ export default function PageBanner({ title }) {
             style={{   
               // height: 'clamp(10rem, 34vw + 1rem, 25rem)', 
               minHeight: '10rem', 
-              height: '27.5vw',
+              width: '15vw',
               transform: 'rotate(90deg) scaleY(-1)', 
               display: 'block',
             }}

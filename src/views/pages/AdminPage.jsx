@@ -1,580 +1,238 @@
+// src/views/pages/AdminPage.jsx
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '../context/AuthContext.jsx'
 import { adminApi } from '../../api/admin.js'
-import LoadingSpinner from '../components/LoadingSpinner.jsx'
+import { Link } from "react-router-dom";
+import SEO from '../components/SEO.jsx'
+import AdminDashboardTab from '../components/AdminDashboardTab.jsx'
+import AdminGainsTab     from '../components/AdminGainsTab.jsx'
+import AdminTicketsTab   from '../components/AdminTicketsTab.jsx'
+import AdminPrizesTab    from '../components/AdminPrizesTab.jsx'
+import AdminUsersTab     from '../components/AdminUsersTab.jsx'
 import toast from 'react-hot-toast'
 
-const TABS = ['Dashboard', 'Tickets & Gains', 'Utilisateurs & droits']
+const CSS = `
+/* ── Shell ────────────────────────────────────────────────── */
+.admin-page { display:flex; min-height:100vh; font-family:'Lato',sans-serif; }
 
-/* ─── Modal générique ──────────────────────────────────────── */
-function Modal({ title, fields, onClose, onSubmit, submitLabel = 'Mettre à jour' }) {
-  const [vals, setVals] = useState(
-    Object.fromEntries(fields.map(f => [f.name, f.defaultValue ?? '']))
-  )
-  const set = (k, v) => setVals(p => ({ ...p, [k]: v }))
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={e => e.stopPropagation()}>
-        <h3>{title}</h3>
-        {fields.map(f => (
-          <div className="form-field" key={f.name}>
-            <label>{f.label}</label>
-            {f.type === 'select' ? (
-              <select value={vals[f.name]} onChange={e => set(f.name, e.target.value)}
-                style={{ borderRadius: 'var(--radius-pill)' }}>
-                {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            ) : (
-              <input type={f.type || 'text'} value={vals[f.name]}
-                onChange={e => set(f.name, e.target.value)}
-                placeholder={f.placeholder || f.label} />
-            )}
-          </div>
-        ))}
-        <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-          <button className="btn btn-orange" style={{ width: '100%' }}
-            onClick={() => onSubmit(vals)}>
-            {submitLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+/* ── Sidebar ─────────────────────────────────────────────── */
+.adm-sidebar {
+  width:220px; flex-shrink:0; background:var(--green-dark);
+  display:flex; flex-direction:column;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  z-index:200; position:relative;
 }
+.adm-sidebar-logo { padding:1.5rem 1.25rem 1rem; border-bottom:1px solid rgba(255,255,255,.08); text-align:center; }
+.adm-brand-name { font-family:'Playfair Display',Georgia,serif; color:#fff; font-size:1.05rem; font-weight:700; letter-spacing:.01em; }
+.adm-sidebar-role { font-family:'Lato',sans-serif; font-size:.68rem; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.08em; font-weight:700; margin-top:.35rem; }
 
-/* ─── Dashboard ─────────────────────────────────────────────── */
-function DashboardTab({ stats }) {
-  const dist   = stats?.prize_distribution || []
-  const alerts = stats?.low_stock_alerts   || []
-  const tpd    = stats?.tickets_per_day    || []
-  const COLORS  = ['#1a3c2e', '#e8431a', '#c9a84c', '#4a8c60', '#e2d9c8']
-  const maxCount = Math.max(...tpd.map(d => d.count), 1)
-
-  return (
-    <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 280px', gap: '1.5rem', alignItems: 'start' }}>
-      <div>
-        {/* Donut répartition gains */}
-        <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
-          <h3 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.1rem' }}>Répartition des gains</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-            <div style={{ width: 160, height: 160, flexShrink: 0 }}>
-              <svg viewBox="0 0 36 36" style={{ width: 160, height: 160, transform: 'rotate(-90deg)' }}>
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f0ebe0" strokeWidth="3.8" />
-                {dist.length === 0
-                  ? <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2d9c8" strokeWidth="3.8" />
-                  : (() => {
-                      const total = dist.reduce((s, d) => s + d.count, 0)
-                      let offset = 0
-                      return dist.map((d, i) => {
-                        const dash = (d.count / total) * 100
-                        const el = (
-                          <circle key={d.prize_id} cx="18" cy="18" r="15.9" fill="none"
-                            stroke={COLORS[i % COLORS.length]} strokeWidth="3.8"
-                            strokeDasharray={`${dash} ${100 - dash}`}
-                            strokeDashoffset={-offset} />
-                        )
-                        offset += dash
-                        return el
-                      })
-                    })()
-                }
-              </svg>
-            </div>
-            <div>
-              {dist.length === 0
-                ? <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>Aucune donnée</p>
-                : dist.map((d, i) => (
-                    <div key={d.prize_id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem', fontSize: '0.88rem' }}>
-                      <span style={{ width: 12, height: 12, borderRadius: '50%', background: COLORS[i % COLORS.length], display: 'inline-block', flexShrink: 0 }} />
-                      <span>{d.prize_name} — {d.count}</span>
-                    </div>
-                  ))
-              }
-            </div>
-          </div>
-        </div>
-
-        {/* Barres tickets/jour */}
-        <div className="card" style={{ padding: '2rem' }}>
-          <h3 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.1rem' }}>Courbes : Tickets utilisés par jour</h3>
-          {tpd.length === 0
-            ? <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>Aucune donnée</p>
-            : (
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem', height: 120, paddingBottom: '0.5rem', borderBottom: '1px solid var(--cream-border)', overflowX: 'auto' }}>
-                {tpd.map((d, i) => (
-                  <div key={i} style={{ flex: '0 0 auto', minWidth: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{d.count}</span>
-                    <div style={{ width: '100%', background: 'var(--green-dark)', borderRadius: '4px 4px 0 0', height: `${Math.max((d.count / maxCount) * 100, 4)}px` }} />
-                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      {new Date(d.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )
-          }
-        </div>
-      </div>
-
-      {/* Alertes + résumé */}
-      <div>
-        <div style={{ background: 'var(--green-dark)', color: 'white', borderRadius: 'var(--radius-sm)', padding: '0.85rem 1.25rem', marginBottom: '1rem', fontWeight: 700, textAlign: 'center' }}>
-          Alertes
-        </div>
-        {alerts.length === 0
-          ? <div className="card" style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>Aucune alerte</div>
-          : alerts.map(p => (
-              <div key={p.id} className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem' }}>
-                <span style={{ color: 'var(--orange)', fontSize: '1.1rem' }}>⚠</span>
-                <span style={{ fontSize: '0.85rem' }}>Stock <strong>{p.name}</strong> faible ({p.stock} restants)</span>
-              </div>
-            ))
-        }
-
-        {/* Stats rapides */}
-        <div className="card" style={{ padding: '1rem', marginTop: '1rem' }}>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 700 }}>RÉSUMÉ</p>
-          {[
-            ['Total participations', stats?.total_participations ?? '—'],
-            ['Gagnants',             stats?.total_winners        ?? '—'],
-            ['Réclamations',         stats?.total_redemptions    ?? '—'],
-            ['En attente',           stats?.pending_redemptions  ?? '—'],
-          ].map(([label, val]) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', borderBottom: '1px solid var(--cream-border)' }}>
-              <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-              <span style={{ fontWeight: 700 }}>{val}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
+.adm-nav { flex:1; padding:.5rem 0; }
+.adm-nav-item {
+  display:flex; align-items:center; gap:.65rem; padding:.78rem 1.25rem;
+  width:100%; text-align:left; background:none;
+  border:none; border-left:3px solid transparent;
+  color:rgba(255,255,255,.52); font-family:'Lato',sans-serif; font-size:.87rem; font-weight:600;
+  cursor:pointer; transition:all .2s ease; letter-spacing:.01em;
 }
+.adm-nav-item:hover  { color:#fff; background:rgba(255,255,255,.05); border-left-color:rgba(255,255,255,.2); }
+.adm-nav-item.active { color:#fff; background:rgba(255,255,255,.09); border-left-color:var(--gold); }
+.adm-nav-icon  { font-size:.98rem; flex-shrink:0; width:1.2rem; text-align:center; }
+.adm-nav-badge { background:var(--orange); color:#fff; font-size:.62rem; font-weight:800; padding:.1rem .4rem; border-radius:10px; min-width:16px; text-align:center; margin-left:auto; }
 
-/* ─── Tickets & Gains ──────────────────────────────────────── */
-function TicketsTab({ participations, onRefresh }) {
-  const [modal, setModal] = useState(null)  // { p, mode: 'update'|'create' }
+.adm-footer { padding:.75rem 1.25rem 1.5rem; border-top:1px solid rgba(255,255,255,.08); font-family:'Lato',sans-serif; font-size:.72rem; color:rgba(255,255,255,.3); text-align:center; }
 
-  const STATUS_LABELS = {
-    pending:   'En préparation',
-    approved:  'Disponible en boutique',
-    completed: 'Remis',
-    rejected:  'Refusé',
-  }
-  const STATUS_CLS = {
-    pending:   's-prep',
-    approved:  's-won',
-    completed: 's-done',
-    rejected:  's-lost',
-  }
-  const STATUS_OPTS = [
-    { value: 'pending',   label: 'En préparation' },
-    { value: 'approved',  label: 'Disponible en boutique' },
-    { value: 'completed', label: 'Remis' },
-    { value: 'rejected',  label: 'Refusé' },
-  ]
+/* ── Main ────────────────────────────────────────────────── */
+.adm-main { flex:1; min-width:0; display:flex; flex-direction:column; background:var(--cream); }
 
-  // Seules les participations gagnantes
-  const winners = participations.filter(p => p.prize_id != null)
-
-  function fmtDate(iso) {
-    return iso ? new Date(iso).toLocaleDateString('fr-FR') : '—'
-  }
-
-  async function handleUpdate(vals) {
-    try {
-      await adminApi.updateRedemption(modal.p.redemption.id, vals.status)
-      toast.success('Statut mis à jour.')
-      setModal(null)
-      onRefresh()
-    } catch {
-      toast.error('Erreur lors de la mise à jour.')
-    }
-  }
-
-  async function handleCreate(vals) {
-    // Créer une redemption pour cette participation
-    try {
-      await import('../../api/client.js').then(m =>
-        m.default.post('redemptions', {
-          participation_id: modal.p.id,
-          method: vals.method,
-        })
-      )
-      // Si statut != pending, mettre à jour immédiatement après création
-      toast.success('Réclamation créée.')
-      setModal(null)
-      onRefresh()
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Erreur.')
-    }
-  }
-
-  const exportCSV = () => {
-    const rows = [['N° Ticket', 'Nom', 'Prénom', 'Mail', 'Lot', 'Date expiration', 'Statut']]
-    winners.forEach(p => {
-      rows.push([
-        p.ticket_code?.code ?? '',
-        p.user?.last_name   ?? '', p.user?.first_name ?? '',
-        p.user?.email       ?? '',
-        p.prize?.name       ?? '',
-        fmtDate(p.expiry_date),
-        p.redemption ? (STATUS_LABELS[p.redemption.status] ?? p.redemption.status) : 'En préparation',
-      ])
-    })
-    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n')
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-    a.download = 'gains.csv'; a.click()
-  }
-
-  return (
-    <div style={{ padding: '2rem' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.3rem' }}>Suivi des gains</h2>
-
-      {winners.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-          Aucune participation gagnante enregistrée.
-        </div>
-      ) : (
-        <div className="card" style={{ overflow: 'auto' }}>
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th>N° Ticket</th><th>Nom</th><th>Prénom</th><th>Mail</th>
-                <th>Lot</th><th>Date expiration</th><th>Statut</th><th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {winners.map(p => {
-                const status = p.redemption?.status
-                const statusLabel = status ? STATUS_LABELS[status] : 'En préparation'
-                const statusCls   = status ? STATUS_CLS[status]   : 's-prep'
-                const isExpired   = p.expiry_date && new Date(p.expiry_date) < new Date()
-
-                return (
-                  <tr key={p.id}>
-                    <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>
-                      {p.ticket_code?.code ?? '—'}
-                    </td>
-                    <td>{p.user?.last_name  ?? '—'}</td>
-                    <td>{p.user?.first_name ?? '—'}</td>
-                    <td style={{ fontSize: '0.83rem' }}>{p.user?.email ?? '—'}</td>
-                    <td>{p.prize?.name ?? '—'}</td>
-                    <td style={{ color: isExpired ? 'var(--error)' : undefined }}>
-                      {fmtDate(p.expiry_date)}
-                      {isExpired && <span style={{ fontSize: '0.7rem', marginLeft: '0.3rem', fontWeight: 700 }}>EXPIRÉ</span>}
-                    </td>
-                    <td>
-                      <span className={`status ${statusCls}`}>{statusLabel}</span>
-                    </td>
-                    <td>
-                      {p.redemption ? (
-                        /* Réclamation existante → mettre à jour statut */
-                        <button className="btn btn-orange"
-                          style={{ padding: '0.3rem 0.85rem', fontSize: '0.78rem' }}
-                          onClick={() => setModal({ p, mode: 'update' })}>
-                          MAJ
-                        </button>
-                      ) : (
-                        /* Pas encore de réclamation → en créer une */
-                        <button className="btn btn-green"
-                          style={{ padding: '0.3rem 0.85rem', fontSize: '0.78rem' }}
-                          onClick={() => setModal({ p, mode: 'create' })}>
-                          Créer
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Modal MAJ statut */}
-      {modal?.mode === 'update' && (
-        <Modal
-          title="Mettre à jour le statut du lot"
-          fields={[
-            { name: 'lot',    label: 'Lot',    defaultValue: modal.p.prize?.name ?? '' },
-            { name: 'status', label: 'Statut', type: 'select',
-              defaultValue: modal.p.redemption?.status ?? 'pending',
-              options: STATUS_OPTS },
-          ]}
-          onClose={() => setModal(null)}
-          onSubmit={handleUpdate}
-          submitLabel="Mettre à jour"
-        />
-      )}
-
-      {/* Modal création réclamation */}
-      {modal?.mode === 'create' && (
-        <Modal
-          title="Créer une réclamation"
-          fields={[
-            { name: 'lot',    label: 'Lot',    defaultValue: modal.p.prize?.name ?? '' },
-            { name: 'method', label: 'Méthode de retrait', type: 'select', defaultValue: 'store',
-              options: [
-                { value: 'store',  label: 'En boutique' },
-                { value: 'mail',   label: 'Par courrier' },
-                { value: 'online', label: 'En ligne' },
-              ]
-            },
-          ]}
-          onClose={() => setModal(null)}
-          onSubmit={handleCreate}
-          submitLabel="Créer la réclamation"
-        />
-      )}
-    </div>
-  )
+/* ── Topbar ──────────────────────────────────────────────── */
+.adm-topbar {
+  background:var(--green-dark); padding:.8rem 1.25rem;
+  display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
+  position:sticky; top:0; z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.25);
 }
+.adm-topbar-title { font-family:'Playfair Display',Georgia,serif; font-size:1.05rem; font-weight:700; color:#fff; flex:1; min-width:80px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-/* ─── Utilisateurs & droits ────────────────────────────────── */
-function UsersTab({ users, onRefresh }) {
-  const [modal, setModal] = useState(null)
-
-  const ROLE_LABELS = { admin: 'Admin', employee: 'Éditeur', user: 'Utilisateur' }
-  const ROLE_OPTS   = [
-    { value: 'user',     label: 'Utilisateur' },
-    { value: 'employee', label: 'Éditeur' },
-    { value: 'admin',    label: 'Admin' },
-  ]
-
-  async function handleUpdate(vals) {
-    try {
-      await adminApi.updateUser(modal.id, {
-        first_name: vals.first_name,
-        last_name:  vals.last_name,
-        email:      vals.email,
-        role:       vals.role,
-        ...(vals.password ? { password: vals.password } : {}),
-      })
-      toast.success('Utilisateur mis à jour.')
-      setModal(null); onRefresh()
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Erreur.')
-    }
-  }
-
-  async function handleAdd(vals) {
-    try {
-      await adminApi.createUser({
-        first_name: vals.first_name,
-        last_name:  vals.last_name,
-        email:      vals.email,
-        role:       vals.role,
-        password:   vals.password || 'Password@1234',
-      })
-      toast.success('Utilisateur ajouté.')
-      setModal(null); onRefresh()
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Erreur.')
-    }
-  }
-
-  async function handleDelete(u) {
-    if (!confirm(`Supprimer ${u.first_name} ${u.last_name} ?`)) return
-    try {
-      await adminApi.deleteUser(u.id)
-      toast.success('Utilisateur supprimé.')
-      onRefresh()
-    } catch { toast.error('Erreur.') }
-  }
-
-  return (
-    <div style={{ padding: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.3rem' }}>Utilisateurs & droits</h2>
-        <button className="btn btn-orange" style={{ fontSize: '0.88rem' }}
-          onClick={() => setModal('add')}>
-          Ajouter un utilisateur
-        </button>
-      </div>
-
-      {users.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Aucun utilisateur.</div>
-      ) : (
-        <div className="card" style={{ overflow: 'auto' }}>
-          <table className="tbl">
-            <thead>
-              <tr><th>Nom</th><th>Prénom</th><th>Mail</th><th>Droit</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u.id}>
-                  <td>{u.last_name  ?? '—'}</td>
-                  <td>{u.first_name ?? '—'}</td>
-                  <td style={{ fontSize: '0.85rem' }}>{u.email}</td>
-                  <td>
-                    <span className={`status ${u.role === 'admin' ? 's-done' : u.role === 'employee' ? 's-won' : 's-lost'}`}>
-                      {ROLE_LABELS[u.role] ?? u.role}
-                    </span>
-                  </td>
-                  <td style={{ display: 'flex', gap: '0.4rem' }}>
-                    <button className="btn btn-orange"
-                      style={{ padding: '0.3rem 0.85rem', fontSize: '0.78rem' }}
-                      onClick={() => setModal(u)}>
-                      MAJ
-                    </button>
-                    <button className="btn btn-outline"
-                      style={{ padding: '0.3rem 0.85rem', fontSize: '0.78rem', color: 'var(--error)', borderColor: 'var(--error)' }}
-                      onClick={() => handleDelete(u)}>
-                      ✕
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {modal && modal !== 'add' && (
-        <Modal title="Mettre à jour l'utilisateur"
-          fields={[
-            { name: 'last_name',  label: 'Nom',    defaultValue: modal.last_name  || '' },
-            { name: 'first_name', label: 'Prénom', defaultValue: modal.first_name || '' },
-            { name: 'email',      label: 'Mail',   type: 'email', defaultValue: modal.email || '' },
-            { name: 'role',       label: 'Rôle',   type: 'select', defaultValue: modal.role || 'user', options: ROLE_OPTS },
-            { name: 'password',   label: 'Nouveau mot de passe (optionnel)', type: 'password', defaultValue: '' },
-          ]}
-          onClose={() => setModal(null)}
-          onSubmit={handleUpdate}
-          submitLabel="Mettre à jour"
-        />
-      )}
-
-      {modal === 'add' && (
-        <Modal title="Ajout utilisateur"
-          fields={[
-            { name: 'last_name',  label: 'Nom' },
-            { name: 'first_name', label: 'Prénom' },
-            { name: 'email',      label: 'Mail', type: 'email' },
-            { name: 'password',   label: 'Mot de passe', type: 'password' },
-            { name: 'role',       label: 'Rôle', type: 'select', defaultValue: 'user', options: ROLE_OPTS },
-          ]}
-          onClose={() => setModal(null)}
-          onSubmit={handleAdd}
-          submitLabel="Ajouter l'utilisateur"
-        />
-      )}
-    </div>
-  )
+.adm-search-wrap { position:relative; flex:1; min-width:150px; max-width:360px; }
+.adm-search {
+  width:100%; padding:.52rem 1rem .52rem 2.1rem;
+  border-radius:var(--radius-pill); border:none;
+  font-family:'Lato',sans-serif; font-size:.87rem;
+  background:rgba(255,255,255,.12); color:#fff; outline:none;
+  transition:background .2s ease;
 }
+.adm-search::placeholder { color:rgba(255,255,255,.38); }
+.adm-search:focus { background:rgba(255,255,255,.18); }
+.adm-search-ico { position:absolute; left:.7rem; top:50%; transform:translateY(-50%); font-size:.8rem; pointer-events:none; }
 
-/* ─── Page Admin principale ────────────────────────────────── */
+.adm-topbar-btn {
+  padding:.42rem .9rem; border-radius:var(--radius-pill);
+  border:1px solid rgba(255,255,255,.22); background:transparent;
+  color:rgba(255,255,255,.75); font-family:'Lato',sans-serif; font-size:.78rem; font-weight:700;
+  cursor:pointer; transition:all .2s ease; white-space:nowrap;
+}
+.adm-topbar-btn:hover { background:rgba(255,255,255,.1); color:#fff; }
+
+/* Hamburger */
+.adm-burger { display:none; background:none; border:none; cursor:pointer; flex-direction:column; gap:5px; padding:.25rem; flex-shrink:0; }
+.adm-burger span { display:block; width:21px; height:2px; background:#fff; border-radius:2px; transition:all .25s ease; }
+
+/* Overlay mobile */
+.adm-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:150; }
+
+/* ── Tab content ─────────────────────────────────────────── */
+@keyframes tabIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.adm-content { flex:1; overflow:auto; }
+.adm-tab-anim { animation:tabIn .3s ease both; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:768px) {
+  .adm-burger { display:flex !important; }
+  .adm-sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); }
+  .adm-sidebar.open { transform:translateX(0); }
+  .adm-overlay.open { display:block; }
+  .adm-topbar-title { font-size:.95rem; }
+}
+@media(max-width:1024px) {
+  .adm-sidebar { width:200px; }
+}
+@media(max-width:480px) {
+  .adm-search-wrap { max-width:100%; order:10; flex-basis:100%; }
+}
+`
+
+const TABS = [
+  { key:'dashboard', icon:'📊', label:'Dashboard'           },
+  { key:'gains',     icon:'🎁', label:'Gains & Réclamations' },
+  { key:'tickets',   icon:'🎫', label:'Tickets'             },
+  { key:'prizes',    icon:'🏆', label:'Lots'                },
+  { key:'users',     icon:'👥', label:'Utilisateurs'        },
+]
+
 export default function AdminPage() {
-  const [tab, setTab]             = useState(0)
-  const [stats, setStats]         = useState(null)
-  const [participations, setPartic] = useState([])
-  const [users, setUsers]         = useState([])
-  const [search, setSearch]       = useState('')
-  const [loading, setLoading]     = useState(true)
+  const { user }              = useAuth()
+  const [tab, setTab]         = useState('dashboard')
+  const [stats, setStats]     = useState(null)
+  const [statsLoading, setSL] = useState(true)
+  const [searchVal, setSearchVal] = useState('')
+  const [search, setSearch]   = useState('')
+  const [sidebarOpen, setSO]  = useState(false)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [s, p, u] = await Promise.allSettled([
-        adminApi.stats(),
-        // Toutes les participations avec user + prize + ticket + redemption
-        adminApi.participations({ per_page: 200 }),
-        adminApi.users(),
-      ])
-      if (s.status === 'fulfilled') setStats(s.value)
-      if (p.status === 'fulfilled') setPartic(p.value.data ?? [])
-      if (u.status === 'fulfilled') setUsers(u.value.data ?? [])
-    } catch {}
-    setLoading(false)
+  const userRole = user?.role?.name ?? user?.role ?? 'employee'
+
+  const loadStats = useCallback(async () => {
+    setSL(true)
+    try { setStats(await adminApi.stats()) }
+    catch {}
+    finally { setSL(false) }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    loadStats()
+    const id = setInterval(loadStats, 60_000)
+    return () => clearInterval(id)
+  }, [loadStats])
 
-  const q = search.toLowerCase()
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchVal), 350)
+    return () => clearTimeout(t)
+  }, [searchVal])
 
-  const filteredPartic = participations.filter(p => {
-    if (!q) return true
-    return (p.ticket_code?.code || '').toLowerCase().includes(q)
-        || (p.user?.last_name   || '').toLowerCase().includes(q)
-        || (p.user?.first_name  || '').toLowerCase().includes(q)
-        || (p.user?.email       || '').toLowerCase().includes(q)
-  })
+  function switchTab(key) { setTab(key); setSO(false); setSearchVal(''); setSearch('') }
 
-  const filteredUsers = users.filter(u => {
-    if (!q) return true
-    return (u.last_name  || '').toLowerCase().includes(q)
-        || (u.first_name || '').toLowerCase().includes(q)
-        || (u.email      || '').toLowerCase().includes(q)
-  })
+  const alertCount = stats?.low_stock_alerts?.length ?? 0
 
   return (
-    <div className="admin-wrap">
-      {/* Sidebar */}
-      <aside className="admin-sidebar">
-        <div className="admin-sidebar-logo">
-          <img src="/images/Footer/img_01.png" alt="Thé Tip Top"
-            style={{ width: 100, margin: '0 auto', filter: 'brightness(1.1)' }}
-            onError={e => { e.target.style.display = 'none' }} />
-        </div>
-        {TABS.map((t, i) => (
-          <button key={t} className={`admin-nav-item ${tab === i ? 'active' : ''}`}
-            onClick={() => setTab(i)}>
-            {t}
-          </button>
-        ))}
-      </aside>
+    <>
+      <style>{CSS}</style>
+      <SEO title="Administration | Thé Tip Top" description="Espace d'administration du jeu-concours Thé Tip Top." />
 
-      {/* Main */}
-      <div className="admin-main">
-        <div className="admin-topbar">
-          <div className="admin-search-wrap">
-            <span className="admin-search-icon">🔍</span>
-            <input className="admin-search"
-              placeholder="Rechercher : N° Ticket, Nom, Prénom..."
-              value={search}
-              onChange={e => setSearch(e.target.value)} />
+      {/* Mobile overlay */}
+      <div className={`adm-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => setSO(false)} />
+
+      <div className="admin-page">
+
+        {/* ── Sidebar ───────────────────────────────────────── */}
+        <aside className={`adm-sidebar ${sidebarOpen ? 'open' : ''}`}>
+          <div className="adm-sidebar-logo">
+            <Link to="/">
+              <img
+                src="/images/Footer/img_01.png"
+                alt="Thé Tip Top"
+                style={{ width: 200, margin: '0 auto', filter: 'brightness(1.15)' }}
+                onError={e => { e.target.style.display = 'none' }}
+              />
+            </Link>
+            <div className="adm-sidebar-role">
+              {userRole === 'admin' ? 'Administrateur' : 'Caissier'}
+            </div>
           </div>
-          <button className="btn btn-orange"
-            style={{ fontSize: '0.85rem', padding: '0.55rem 1.25rem' }}
-            onClick={load}>
-            Rechercher
-          </button>
-          <button className="btn btn-orange"
-            style={{ fontSize: '0.85rem', padding: '0.55rem 1.25rem' }}
-            onClick={() => {
-              // Export CSV selon l'onglet actif
-              if (tab === 1) {
-                const rows = [['N° Ticket','Nom','Prénom','Mail','Lot','Expiration','Statut']]
-                filteredPartic.filter(p => p.prize_id).forEach(p => {
-                  rows.push([
-                    p.ticket_code?.code ?? '',
-                    p.user?.last_name ?? '', p.user?.first_name ?? '',
-                    p.user?.email ?? '',
-                    p.prize?.name ?? '',
-                    p.expiry_date ? new Date(p.expiry_date).toLocaleDateString('fr-FR') : '',
-                    p.redemption?.status ?? 'pending',
-                  ])
-                })
-                const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n')
-                const a = document.createElement('a')
-                a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-                a.download = 'gains.csv'; a.click()
-              }
-            }}>
-            Exporter CSV
-          </button>
-        </div>
 
-        {loading ? <LoadingSpinner /> : (
-          <>
-            {tab === 0 && <DashboardTab stats={stats} />}
-            {tab === 1 && <TicketsTab   participations={filteredPartic} onRefresh={load} />}
-            {tab === 2 && <UsersTab     users={filteredUsers}           onRefresh={load} />}
-          </>
-        )}
+          <nav className="adm-nav">
+            {TABS.map(t => (
+              <button key={t.key}
+                className={`adm-nav-item ${tab === t.key ? 'active' : ''}`}
+                onClick={() => switchTab(t.key)}>
+                <span className="adm-nav-icon">{t.icon}</span>
+                {t.label}
+                {t.key === 'dashboard' && alertCount > 0 && (
+                  <span className="adm-nav-badge">{alertCount}</span>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          <div className="adm-footer">Thé Tip Top © {new Date().getFullYear()}</div>
+        </aside>
+
+        {/* ── Main ──────────────────────────────────────────── */}
+        <div className="adm-main">
+
+          {/* Topbar */}
+          <div className="adm-topbar">
+            <button className="adm-burger" aria-label="Menu" onClick={() => setSO(o => !o)}>
+              <span /><span /><span />
+            </button>
+
+            <div className="adm-topbar-title">
+              {TABS.find(t => t.key === tab)?.label ?? ''}
+            </div>
+
+            {['gains','tickets','users'].includes(tab) && (
+              <div className="adm-search-wrap">
+                <span className="adm-search-ico">🔍</span>
+                <input className="adm-search" aria-label="Rechercher"
+                  placeholder="Rechercher…"
+                  value={searchVal}
+                  onChange={e => setSearchVal(e.target.value)} />
+              </div>
+            )}
+
+            <button className="adm-topbar-btn" onClick={loadStats} title="Actualiser les statistiques">↺ Stats</button>
+
+            {userRole === 'admin' && (
+              <button className="btn btn-orange"
+                style={{ padding:'.42rem .9rem', fontSize:'.78rem' }}
+                onClick={async () => {
+                  try { await adminApi.sendNewsletter(); toast.success('Newsletter envoyée !') }
+                  catch { toast.error('Erreur envoi newsletter.') }
+                }}>
+                Newsletter
+              </button>
+            )}
+          </div>
+
+          {/* Contenu */}
+          <div className="adm-content adm-tab-anim" key={tab}>
+            {tab === 'dashboard' && <AdminDashboardTab stats={stats} loading={statsLoading} />}
+            {tab === 'gains'     && <AdminGainsTab   search={search} />}
+            {tab === 'tickets'   && <AdminTicketsTab  search={search} />}
+            {tab === 'prizes'    && <AdminPrizesTab   userRole={userRole} />}
+            {tab === 'users'     && <AdminUsersTab    search={search} currentUserId={user?.id} />}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   )
 }

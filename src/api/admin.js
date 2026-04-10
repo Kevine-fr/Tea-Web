@@ -1,22 +1,52 @@
+// src/api/admin.js
 import client from './client.js'
 
+const get  = (url, params = {}) => client.get(url, { params }).then(r => r.data)
+const post = (url, body)         => client.post(url, body).then(r => r.data)
+const put  = (url, body)         => client.put(url, body).then(r => r.data)
+const patch= (url, body)         => client.patch(url, body).then(r => r.data)
+const del  = (url)               => client.delete(url).then(r => r.data)
+
 export const adminApi = {
-  stats:          ()         => client.get('admin/stats').then(r => r.data.data ?? r.data),
-  participations: (p = {})   => client.get('admin/participations', { params: p }).then(r => r.data),
-  redemptions:    (p = {})   => client.get('admin/redemptions',    { params: p }).then(r => r.data),
-  prizes:         ()         => client.get('prizes').then(r => r.data),
-  ticketStats:    ()         => client.get('admin/tickets/stats').then(r => r.data.data ?? r.data),
+  // ── Stats globales ──────────────────────────────────────────
+  stats: () => get('admin/stats').then(r => r.data ?? r),
 
-  updateRedemption: (id, status) =>
-    client.patch(`admin/redemptions/${id}/status`, { status }).then(r => r.data),
+  // ── Participations ──────────────────────────────────────────
+  participations: (p = {}) => get('admin/participations', p),
+  participation:  (id)     => get(`admin/participations/${id}`).then(r => r.data ?? r),
+  updateParticipationPrize: (id, prize_id) =>
+    patch(`admin/participations/${id}/prize`, { prize_id }).then(r => r.data ?? r),
+  deleteParticipation: (id) => del(`admin/participations/${id}`),
 
-  // Users
-  users:        (p = {})    => client.get('admin/users', { params: p }).then(r => r.data),
-  createUser:   (body)      => client.post('admin/users', body).then(r => r.data),
-  updateUser:   (id, body)  => client.put(`admin/users/${id}`, body).then(r => r.data),
-  deleteUser:   (id)        => client.delete(`admin/users/${id}`).then(r => r.data),
+  // ── Réclamations ────────────────────────────────────────────
+  redemptions:      (p = {}) => get('admin/redemptions', p),
+  redemption:       (id)     => get(`admin/redemptions/${id}`).then(r => r.data ?? r),
+  updateRedemption: (id, status) => patch(`admin/redemptions/${id}/status`, { status }),
+  deleteRedemption: (id)     => del(`admin/redemptions/${id}`),
 
-  // Prizes
-  createPrize: (body)       => client.post('admin/prizes', body).then(r => r.data),
-  updatePrize: (id, body)   => client.put(`admin/prizes/${id}`, body).then(r => r.data),
+  // ── Tickets ─────────────────────────────────────────────────
+  tickets:      (p = {}) => get('admin/tickets', p),
+  ticketStats:  ()       => get('admin/tickets/stats').then(r => r.data ?? r),
+  generateTickets: (quantity) => post('admin/tickets/generate', { quantity }),
+  resetTicket:  (id) => patch(`admin/tickets/${id}/reset`, {}),
+  deleteTicket: (id) => del(`admin/tickets/${id}`),
+
+  // ── Lots ────────────────────────────────────────────────────
+  prizes:       ()         => get('admin/prizes'),
+  prize:        (id)       => get(`admin/prizes/${id}`).then(r => r.data ?? r),
+  createPrize:  (body)     => post('admin/prizes', body),
+  updatePrize:  (id, body) => put(`admin/prizes/${id}`, body),
+  updateStock:  (id, stock)=> patch(`admin/prizes/${id}/stock`, { stock }),
+  deletePrize:  (id)       => del(`admin/prizes/${id}`),
+
+  // ── Utilisateurs ────────────────────────────────────────────
+  users:       (p = {})    => get('admin/users', p),
+  user:        (id)        => get(`admin/users/${id}`).then(r => r.data ?? r),
+  createUser:  (body)      => post('admin/users', body),
+  updateUser:  (id, body)  => put(`admin/users/${id}`, body),
+  updateRole:  (id, role)  => patch(`admin/users/${id}/role`, { role }),
+  deleteUser:  (id)        => del(`admin/users/${id}`),
+
+  // ── Newsletter ──────────────────────────────────────────────
+  sendNewsletter: () => post('admin/newsletter', {}),
 }
