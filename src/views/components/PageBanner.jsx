@@ -72,16 +72,7 @@ const STYLES = `
       width: 14% !important;
     }
   }
-  @media (max-width: 480px) {
-    .banner-leaf-left,
-    .banner-leaf-right {
-      display: none !important;
-    }
-    .page-banner-content {
-      justify-content: center !important;
-      padding: 0.75rem 1.25rem !important;
-    }
-  }
+  
 `
 
 export default function PageBanner({ title }) {
@@ -114,7 +105,7 @@ export default function PageBanner({ title }) {
       >
         <img
           src="/images/Jeu/img_02.png"
-          alt=""
+          alt="Fleur"
           className="banner-leaf-left"
           style={{ width: '10%', opacity: 0.85, transform: 'scaleX(-1)', flexShrink: 0 }}
         />
@@ -132,8 +123,9 @@ export default function PageBanner({ title }) {
             src="/images/Accueil/img_03.png"
             alt=""
             style={{   
-              maxHeight: '25rem',    
-              width: 'auto',
+              // height: 'clamp(10rem, 34vw + 1rem, 25rem)', 
+              minHeight: '10rem', 
+              height: '27.5vw',
               transform: 'rotate(90deg) scaleY(-1)', 
               display: 'block',
             }}
@@ -146,8 +138,8 @@ export default function PageBanner({ title }) {
               left: '50%',
               transform: 'translate(-50%, -50%)',
               color: '#fff',
-              fontFamily: "'Playfair Display', regular",
-              fontSize: '1.5rem',
+              fontFamily: "'Playfair Display', serif",
+              fontSize: 'clamp(0.78rem, 1.5vw + 0.3rem, 1.5rem)',
               fontStyle: 'italic',
               whiteSpace: 'nowrap',
             }}
@@ -158,7 +150,7 @@ export default function PageBanner({ title }) {
         
         <img
           src="/images/Jeu/img_02.png"
-          alt=""
+          alt="Fleur"
           className="banner-leaf-right"
           style={{ width: '10%', opacity: 0.85, flexShrink: 0 }}
         />

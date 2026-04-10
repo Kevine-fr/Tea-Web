@@ -1,7 +1,3 @@
-// src/views/components/SEO.jsx
-// Composant léger sans dépendance externe.
-// Met à jour document.title et la meta description à chaque montage.
-
 import { useEffect } from 'react'
 
 const DEFAULT_TITLE = 'Jeu-concours Thé Tip Top | Gagnez des lots de thé bio artisanal'

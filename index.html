@@ -1,13 +1,80 @@
 <!doctype html>
 <html lang="fr">
   <head>
+    <!-- Charset -->
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/images/Header/img_01.png" />
+
+    <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Thé Tip Top</title>
+
+    <!-- Title (ULTRA important) -->
+    <title>Thé Tip Top - Jeu concours & thés bio artisanaux</title>
+
+    <!-- Meta description -->
+    <meta
+      name="description"
+      content="Participez au jeu-concours Thé Tip Top et gagnez des lots de thé bio artisanaux. Découvrez notre univers de thés français premium."
+    />
+
+    <!-- Keywords (moins important mais ok) -->
+    <meta
+      name="keywords"
+      content="thé bio, thé artisanal, jeu concours, thé français, Thé Tip Top, gagner du thé"
+    />
+
+    <!-- Robots -->
+    <meta name="robots" content="index, follow" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/images/Header/img_01.png" />
+
+    <!-- Canonical (important si duplication) -->
+    <link rel="canonical" href="https://%VITE_SITE_URL%//" />
+
+    <!-- Open Graph (réseaux sociaux) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Thé Tip Top - Jeu concours" />
+    <meta
+      property="og:description"
+      content="Gagnez du thé bio artisanal avec notre jeu-concours 100% gagnant."
+    />
+    <meta property="og:image" content="https://%VITE_SITE_URL%//images/og-image.jpg" />
+    <meta property="og:url" content="https://%VITE_SITE_URL%//" />
+    <meta property="og:locale" content="fr_FR" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Thé Tip Top - Jeu concours" />
+    <meta
+      name="twitter:description"
+      content="Participez et gagnez des lots de thé bio artisanaux."
+    />
+    <meta name="twitter:image" content="https://%VITE_SITE_URL%//images/og-image.jpg" />
+
+    <!-- Theme color (mobile UX) -->
+    <meta name="theme-color" content="#1a3c2e" />
+
+    <!-- Preload logo (performance) -->
+    <link rel="preload" as="image" href="/images/Header/img_01.png" />
+
+    <!-- Fonts (optionnel si Google Fonts) -->
+    <!-- <link rel="preconnect" href="https://fonts.googleapis.com"> -->
+
   </head>
+
   <body>
+    <!-- SEO fallback (important pour React) -->
+    <noscript>
+      <h1>Thé Tip Top</h1>
+      <p>
+        Découvrez notre jeu-concours et tentez de gagner du thé bio artisanal.
+      </p>
+    </noscript>
+
+    <!-- App -->
     <div id="root"></div>
+
+    <!-- Script -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
