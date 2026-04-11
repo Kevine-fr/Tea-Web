@@ -207,7 +207,7 @@ export default function RegisterPage() {
             <img
               src="/images/Inscription/img_01.png"
               alt="Inscription"
-              style={{ width: '100%', height: 615, objectFit: 'cover' }}
+              style={{ width: '100%', height: 570, objectFit: 'cover' }}
             />
           </div>
 
@@ -310,12 +310,6 @@ export default function RegisterPage() {
                 <img src="https://www.google.com/favicon.ico" alt="" style={{ width: 16, height: 16 }} />
                 S'inscrire avec Google
               </button>
-              <button type="button" className="btn btn-outline reg-btn-social"
-                style={{ width: '100%', fontSize: '0.88rem', gap: '0.6rem' }}>
-                <span style={{ color: '#1877f2', fontWeight: 900, fontSize: '1rem' }}>f</span>
-                S'inscrire avec Facebook
-              </button>
-
               <p className="reg-login-link" style={{
                 textAlign: 'center', marginTop: '1.25rem',
                 fontSize: '0.85rem', color: 'var(--text-muted)',

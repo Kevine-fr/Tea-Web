@@ -53,25 +53,28 @@ const STYLES = `
 
   /* ── Responsive ── */
   .page-banner-content {
-    padding: 0.5rem 10rem;
-    margin: 0 8rem;
+    padding: 0.5rem clamp(1rem, 5vw, 10rem);
+    margin: 0 clamp(0.5rem, 4vw, 8rem);
   }
-  // @media (max-width: 1100px) {
-  //   .page-banner-content {
-  //     padding: 0.5rem 3rem !important;
-  //     margin: 0 2rem !important;
-  //   }
-  // }
-  // @media (max-width: 768px) {
-  //   .page-banner-content {
-  //     padding: 0.75rem 1rem !important;
-  //     margin: 0 1rem !important;
-  //   }
-  //   .banner-leaf-left,
-  //   .banner-leaf-right {
-  //     width: 14% !important;
-  //   }
-  // }
+  
+  @media (max-width: 1100px) {
+    .page-banner-content {
+      padding: 0.5rem 3rem !important;
+      margin: 0 2rem !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .page-banner-content {
+      padding: 0.75rem 1rem !important;
+      margin: 0 1rem !important;
+    }
+
+    .banner-leaf-left,
+    .banner-leaf-right {
+      width: 14% !important;
+    }
+  }
   
 `
 
@@ -93,6 +96,7 @@ export default function PageBanner({ title }) {
       <div
         className="page-banner-content"
         style={{
+          position: 'relative',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -125,7 +129,7 @@ export default function PageBanner({ title }) {
             style={{   
               // height: 'clamp(10rem, 34vw + 1rem, 25rem)', 
               minHeight: '10rem', 
-              width: '15vw',
+              width: 'clamp(80px, 15vw, 200px)',
               transform: 'rotate(90deg) scaleY(-1)', 
               display: 'block',
             }}

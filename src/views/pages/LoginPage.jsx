@@ -284,11 +284,6 @@ export default function LoginPage() {
                 <img src="https://www.google.com/favicon.ico" alt="" style={{ width: 16, height: 16 }} />
                 Se connecter avec Google
               </button>
-              <button type="button" className="btn btn-outline login-btn-social"
-                style={{ width: '100%', fontSize: '0.88rem', gap: '0.6rem' }}>
-                <span style={{ color: '#1877f2', fontWeight: 900, fontSize: '1rem' }}>f</span>
-                Se connecter avec Facebook
-              </button>
             </form>
           </div>
 
@@ -297,7 +292,7 @@ export default function LoginPage() {
             <img
               src="/images/Connexion/img_01.png"
               alt="Thé Tip Top"
-              style={{ width: '100%', height: 545, objectFit: 'cover' }}
+              style={{ width: '100%', height: 500, objectFit: 'cover' }}
             />
           </div>
         </div>
