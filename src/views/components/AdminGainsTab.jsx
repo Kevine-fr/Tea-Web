@@ -27,9 +27,8 @@ const STATUS_META = {
   rejected:  { label: 'Refusé',                 cls: 's-lost' },
 }
 
-// Toutes les valeurs de statut sélectionnables depuis l'admin
+// Statuts modifiables par l'admin (toujours des strings valides côté serveur)
 const STATUS_OPTS = [
-  { value: 'pending',   label: 'En préparation' },
   { value: 'approved',  label: 'Disponible en boutique' },
   { value: 'completed', label: 'Remis' },
   { value: 'rejected',  label: 'Refusé' },
@@ -44,13 +43,25 @@ const FILTERS = [
   { key: 'rejected',  label: 'Refusé' },
 ]
 
-const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('fr-FR') : '—'
+/**
+ * Retourne une valeur de defaultValue garantie présente dans STATUS_OPTS.
+ * Si le statut courant est 'pending' (pas dans les options éditables),
+ * on initialise sur 'approved' — première transition logique.
+ *
+ * BUG CORRIGÉ :
+ * defaultValue:'pending' + options sans 'pending' → select affiche 'approved' visuellement
+ * mais vals.status reste 'pending' → soumission → 422 Laravel (pending non autorisé dans UpdateRedemptionStatusRequest).
+ */
+function resolveDefaultStatus(currentStatus) {
+  const valid = STATUS_OPTS.map(o => o.value)
+  return valid.includes(currentStatus) ? currentStatus : 'approved'
+}
 
 export default function AdminGainsTab({ search = '' }) {
   const [participations, setParticipations] = useState([])
   const [loading, setLoading]               = useState(true)
   const [statusFilter, setStatusFilter]     = useState('all')
-  const [modal, setModal]                   = useState(null) // { type, data }
+  const [modal, setModal]                   = useState(null)
   const [page, setPage]                     = useState(1)
   const [meta, setMeta]                     = useState({})
 
@@ -72,45 +83,22 @@ export default function AdminGainsTab({ search = '' }) {
     return p.redemption?.status === statusFilter
   })
 
-  // ── Gérer la réclamation (création ou mise à jour de statut) ──
-  // L'admin choisit le statut voulu directement.
-  // Si pas de réclamation → on la crée avec method='store' et le statut choisi.
-  // Si réclamation existante → on met à jour le statut.
-  async function handleManageStatus(vals) {
+  // ── Mise à jour du statut ─────────────────────────────────
+  async function handleUpdateStatus(vals) {
     const { data } = modal
+    if (!data.redemption) return
 
     try {
-      if (!data.redemption) {
-        // Création : method par défaut 'store' (géré côté serveur), + statut voulu
-        const client = (await import('../../api/client.js')).default
-        await client.post('redemptions', {
-          participation_id: data.id,
-          // method non envoyé → serveur applique 'store' par défaut
-          status: vals.status,
-        })
-        toast.success('Réclamation créée.')
-      } else {
-        // Mise à jour du statut
-        await adminApi.updateRedemption(data.redemption.id, vals.status)
-        toast.success('Statut mis à jour.')
-      }
+      await adminApi.updateRedemption(data.redemption.id, vals.status)
+      toast.success('Statut mis à jour.')
       setModal(null)
       load(page)
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Erreur.')
+      toast.error(err.response?.data?.message || 'Erreur lors de la mise à jour.')
     }
   }
 
-  // ── Suppression réclamation ───────────────────────────────────
-  async function handleDeleteRedemption() {
-    try {
-      await adminApi.deleteRedemption(modal.data.redemption.id)
-      toast.success('Réclamation supprimée.')
-      setModal(null); load(page)
-    } catch (err) { toast.error(err.response?.data?.message || 'Erreur.') }
-  }
-
-  // ── Suppression participation (+ ticket + stock restaurés) ────
+  // ── Suppression participation ─────────────────────────────
   async function handleDeleteParticipation() {
     try {
       await adminApi.deleteParticipation(modal.data.id)
@@ -119,7 +107,7 @@ export default function AdminGainsTab({ search = '' }) {
     } catch (err) { toast.error(err.response?.data?.message || 'Erreur.') }
   }
 
-  // ── Export CSV ────────────────────────────────────────────────
+  // ── Export CSV ────────────────────────────────────────────
   function exportCSV() {
     const rows = [['N° Ticket', 'Nom', 'Prénom', 'Mail', 'Lot', 'Statut']]
     filtered.forEach(p => rows.push([
@@ -199,21 +187,22 @@ export default function AdminGainsTab({ search = '' }) {
                           <td style={{ fontSize: '.88rem' }}>{p.prize?.name ?? '—'}</td>
                           <td>
                             {noR
-                              ? <span style={{ fontSize: '.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Sans réclamation</span>
+                              ? <span style={{ fontSize: '.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>En attente du participant</span>
                               : <span className={`status ${s?.cls ?? 's-prep'}`}>{s?.label ?? p.redemption.status}</span>
                             }
                           </td>
                           <td>
                             <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap' }}>
-                              {/* Bouton unique : choisir / modifier le statut */}
-                              <button
-                                className={noR ? 'btn btn-green' : 'btn btn-orange'}
-                                style={{ padding: '.28rem .75rem', fontSize: '.78rem' }}
-                                onClick={() => setModal({ type: 'status', data: p })}
-                              >
-                                {noR ? '+ Statut' : 'Statut'}
-                              </button>
-
+                              {/* Modifier le statut — seulement si une réclamation existe */}
+                              {!noR && (
+                                <button
+                                  className="btn btn-orange"
+                                  style={{ padding: '.28rem .75rem', fontSize: '.78rem' }}
+                                  onClick={() => setModal({ type: 'status', data: p })}
+                                >
+                                  Statut
+                                </button>
+                              )}
 
                               {/* Supprimer participation */}
                               <button className="btn btn-outline"
@@ -251,52 +240,42 @@ export default function AdminGainsTab({ search = '' }) {
         )}
       </div>
 
-      {/* ── Modal unique : choisir/modifier le statut ─────────── */}
+      {/* ── Modal modifier le statut ──────────────────────────── */}
       {modal?.type === 'status' && (() => {
-        const { data } = modal
-        const hasR    = !!data.redemption
-        const current = data.redemption?.status ?? 'pending'
+        const { data }   = modal
+        const current    = data.redemption?.status ?? 'pending'
+
+        // ⚠  resolveDefaultStatus garantit que le defaultValue est dans STATUS_OPTS.
+        //    Si current = 'pending', renvoie 'approved' (première option valide).
+        //    Sinon renvoie le statut actuel directement.
+        const safeDefault = resolveDefaultStatus(current)
+
         return (
           <AdminModal
-            title={`${hasR ? 'Modifier le statut' : 'Créer la réclamation'} — ${data.prize?.name ?? 'lot'}`}
+            title={`Modifier le statut — ${data.prize?.name ?? 'lot'}`}
             fields={[
               {
                 name: 'status',
-                label: 'Statut de la réclamation',
+                label: 'Nouveau statut',
                 type: 'select',
-                defaultValue: current,
+                defaultValue: safeDefault,   // ← toujours une valeur présente dans OPTIONS
                 options: STATUS_OPTS,
               },
             ]}
             onClose={() => setModal(null)}
-            onSubmit={handleManageStatus}
-            submitLabel={hasR ? 'Mettre à jour' : 'Créer'}
+            onSubmit={handleUpdateStatus}
+            submitLabel="Mettre à jour"
           >
-            {/* Info : la méthode est toujours "en boutique" par défaut */}
-            {!hasR && (
-              <p style={{ fontSize: '.8rem', color: 'var(--text-muted)', marginBottom: '.75rem', display: 'flex', alignItems: 'center', gap: '.4rem' }}>
-                <span>🏪</span>
-                Retrait en boutique par défaut.
-              </p>
-            )}
+            {/* Info contextuelle : statut actuel */}
+            <p style={{ fontSize: '.78rem', color: 'var(--text-muted)', margin: '-.25rem 0 .75rem', display: 'flex', alignItems: 'center', gap: '.4rem' }}>
+              Statut actuel :&nbsp;
+              <span className={`status ${STATUS_META[current]?.cls ?? 's-prep'}`} style={{ fontSize: '.72rem' }}>
+                {STATUS_META[current]?.label ?? current}
+              </span>
+            </p>
           </AdminModal>
         )
       })()}
-
-      {/* ── Modal supprimer réclamation ───────────────────────── */}
-      {modal?.type === 'delRedemption' && (
-        <AdminModal
-          title="Supprimer la réclamation ?"
-          onClose={() => setModal(null)}
-          onSubmit={handleDeleteRedemption}
-          submitLabel="🗑 Supprimer"
-          submitVariant="red"
-        >
-          <p style={{ fontSize: '.88rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-            Réclamation de <strong>{modal.data.user?.first_name} {modal.data.user?.last_name}</strong> supprimée définitivement.
-          </p>
-        </AdminModal>
-      )}
 
       {/* ── Modal supprimer participation ─────────────────────── */}
       {modal?.type === 'delParticipation' && (

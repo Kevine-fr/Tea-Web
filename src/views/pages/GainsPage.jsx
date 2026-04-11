@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { participationsApi } from '../../api/participations.js'
-import Layout from '../components/Layout.jsx'
-import PageBanner from '../components/PageBanner.jsx'
-import AnimatedLeaves from '../components/AnimatedLeaves.jsx'
-import LoadingSpinner from '../components/LoadingSpinner.jsx'
-import toast from 'react-hot-toast'
+import Layout                from '../components/Layout.jsx'
+import PageBanner            from '../components/PageBanner.jsx'
+import LoadingSpinner        from '../components/LoadingSpinner.jsx'
+import toast                 from 'react-hot-toast'
 
-/* ─── Styles d'animation ─────────────────────────────────── */
 const STYLES = `
   @keyframes slideUp {
     from { opacity: 0; transform: translateY(28px); }
@@ -37,117 +35,41 @@ const STYLES = `
     0%, 100% { opacity: 1; }
     50%       { opacity: .45; }
   }
-  @keyframes shimmerRow {
-    0%   { background-position: -200% center; }
-    100% { background-position:  200% center; }
-  }
 
-  /* ── Titre ── */
-  .gains-title {
-    animation: slideUp .5s ease both;
-  }
+  .gains-title     { animation: slideUp .5s ease both; }
   .gains-underline {
-    display: block;
-    height: 2px; width: 0;
+    display: block; height: 2px; width: 0;
     background: var(--orange, #c8723a);
-    border-radius: 4px;
-    margin: .45rem auto 2rem;
+    border-radius: 4px; margin: .45rem auto 2rem;
     animation: lineGrow .55s ease .2s forwards;
   }
+  .gains-card  { animation: fadeScaleIn .55s ease .1s both; }
+  .gains-row   { animation: rowIn .4s ease both; transition: background .2s ease; }
+  .gains-row:hover { background: rgba(106,143,90,.04); }
+  .gains-code  { font-family: monospace; font-weight: 600; letter-spacing: .06em; transition: color .2s ease; }
+  .gains-row:hover .gains-code { color: var(--green-mid, #6a8f5a); }
+  .gains-badge { animation: badgePop .35s ease both; display: inline-block; }
+  .s-prep    { animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite; }
+  .s-lost    { animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite; }
+  .s-won     { animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite; }
+  .s-done    { animation: badgePop .35s ease both; }
+  .s-pending { animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite; }
+  .gains-empty      { animation: fadeScaleIn .5s ease both; }
+  .gains-empty-icon { display: block; font-size: 2.6rem; margin-bottom: .75rem; animation: emptyFloat 3.2s ease-in-out infinite; }
+  .gains-deco  { position: absolute; border-radius: 50%; pointer-events: none; }
+  .gains-inner { position: relative; z-index: 1; padding: 0 8rem; }
 
-  /* ── Carte tableau ── */
-  .gains-card {
-    animation: fadeScaleIn .55s ease .1s both;
-  }
-
-  /* ── Lignes tableau en cascade ── */
-  .gains-row {
-    animation: rowIn .4s ease both;
-    transition: background .2s ease;
-  }
-  .gains-row:hover {
-    background: rgba(106,143,90,.04);
-  }
-
-  /* ── Code ticket ── */
-  .gains-code {
-    font-family: monospace;
-    font-weight: 600;
-    letter-spacing: .06em;
-    transition: color .2s ease;
-  }
-  .gains-row:hover .gains-code {
-    color: var(--green-mid, #6a8f5a);
-  }
-
-  /* ── Badges statut animés ── */
-  .gains-badge {
-    animation: badgePop .35s ease both;
-    display: inline-block;
-  }
-
-  /* ── Badge « En préparation » clignote doucement ── */
-  .s-prep {
-    animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite;
-  }
-
-  .s-lost {
-    animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite;
-  }
-
-  .s-won {
-    animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite;
-  }
-
-  .s-done {
-    animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite;
-  }
-
-  .s-pending {
-    animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite;
-  }
-
-  /* ── État vide ── */
-  .gains-empty {
-    animation: fadeScaleIn .5s ease both;
-  }
-  .gains-empty-icon {
-    display: block;
-    font-size: 2.6rem;
-    margin-bottom: .75rem;
-    animation: emptyFloat 3.2s ease-in-out infinite;
-  }
-
-  /* ── Déco fond ── */
-  .gains-deco {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-  }
-
-  /* ── Responsive inner ── */
-  .gains-inner {
-    position: relative;
-    z-index: 1;
-    padding: 0 8rem;
-  }
-  @media (max-width: 1024px) {
-    .gains-inner { padding: 0 3rem; }
-  }
-  @media (max-width: 640px) {
-    .gains-inner { padding: 0 1rem; }
-  }
-
-  /* ── Tableau responsive ── */
-  @media (max-width: 600px) {
+  @media (max-width: 1024px) { .gains-inner { padding: 0 3rem; } }
+  @media (max-width: 640px)  { .gains-inner { padding: 0 1rem; } }
+  @media (max-width: 600px)  {
     .gains-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .tbl { min-width: 480px; }
-    .gains-badge { font-size: 0.75rem; padding: 3px 7px; white-space: nowrap; }
+    .tbl { min-width: 420px; }
+    .gains-badge { font-size: .75rem; padding: 3px 7px; white-space: nowrap; }
   }
 `
 
 const STATUS = {
-  waiting:   { label: 'En attente',             cls: 's-lost' },
+  waiting:   { label: 'Non réclamé',            cls: 's-lost' },
   pending:   { label: 'En préparation',         cls: 's-prep' },
   approved:  { label: 'Disponible en boutique', cls: 's-won'  },
   completed: { label: 'Remis',                  cls: 's-done' },
@@ -157,39 +79,35 @@ const STATUS = {
 export default function GainsPage() {
   const [list, setList]       = useState([])
   const [loading, setLoading] = useState(true)
-  const [titleVis, setTitleVis] = useState(false)
   const titleRef = useRef(null)
 
-  /* Inject styles once */
   useEffect(() => {
     const id = '__gains-styles__'
     if (!document.getElementById(id)) {
       const el = document.createElement('style')
-      el.id = id
-      el.textContent = STYLES
+      el.id = id; el.textContent = STYLES
       document.head.appendChild(el)
     }
   }, [])
 
-  /* Scroll reveal titre */
   useEffect(() => {
     const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setTitleVis(true); obs.disconnect() } },
+      ([e]) => { if (e.isIntersecting) obs.disconnect() },
       { threshold: 0.1 }
     )
     if (titleRef.current) obs.observe(titleRef.current)
     return () => obs.disconnect()
   }, [])
 
-  useEffect(() => {
+  function loadList() {
+    setLoading(true)
     participationsApi.mine()
-      .then(res => {
-        const data = res.data ?? []
-        setList(data.filter(p => p.prize_id != null))
-      })
+      .then(res => setList((res.data ?? []).filter(p => p.prize_id != null)))
       .catch(() => toast.error('Impossible de charger vos gains.'))
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { loadList() }, [])
 
   function deadline(iso) {
     if (!iso) return '—'
@@ -203,27 +121,22 @@ export default function GainsPage() {
 
       <div style={{ position: 'relative', background: 'var(--cream)', padding: '2.5rem 1.5rem 4rem', overflow: 'hidden' }}>
 
-        {/* ── Décorations fond ── */}
         <div className="gains-deco" style={{
-          width: 360, height: 360,
-          top: -110, right: -90,
+          width: 360, height: 360, top: -110, right: -90,
           background: 'radial-gradient(circle, rgba(106,143,90,.07) 0%, transparent 70%)',
         }} />
         <div className="gains-deco" style={{
-          width: 240, height: 240,
-          bottom: -60, left: -60,
+          width: 240, height: 240, bottom: -60, left: -60,
           background: 'radial-gradient(circle, rgba(200,100,40,.06) 0%, transparent 70%)',
         }} />
 
         <div className="gains-inner">
 
-          {/* ── Titre ── */}
           <div ref={titleRef} className="gains-title" style={{ textAlign: 'center' }}>
             <h2>Suivi de mes gains</h2>
             <span className="gains-underline" />
           </div>
 
-          {/* ── Contenu ── */}
           {loading ? (
             <LoadingSpinner />
           ) : list.length === 0 ? (
@@ -248,7 +161,7 @@ export default function GainsPage() {
                     const code      = p.ticket_code?.code ?? p.ticket_code_id?.slice(0, 8) ?? '—'
                     const prizeName = p.prize?.name ?? 'Gain'
                     const redem     = p.redemption
-                    const s         = redem ? (STATUS[redem.status] || STATUS.pending) : STATUS.waiting
+                    const s         = redem ? (STATUS[redem.status] ?? STATUS.pending) : STATUS.waiting
                     const dateRef   = redem?.requested_at ?? p.participation_date
 
                     return (
