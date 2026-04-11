@@ -3,9 +3,17 @@ import { authApi } from '../../api/auth.js'
 
 const Ctx = createContext(null)
 
-/** Normalise le rôle en minuscule pour éviter les bugs de casse */
+/**
+ * Normalise le rôle.
+ * L'API retourne maintenant 'role' comme string directe (ex: "admin")
+ * et non plus un objet { id, name }.
+ * On accepte les deux formats pour rester robuste.
+ */
 function normalizeRole(raw) {
   if (!raw) return null
+  // Si c'est encore un objet { name: '...' } (ancien format) → extraire le name
+  if (typeof raw === 'object' && raw !== null) return String(raw.name ?? '').toLowerCase().trim()
+  // Sinon c'est déjà une string
   return String(raw).toLowerCase().trim()
 }
 
@@ -21,14 +29,16 @@ export function AuthProvider({ children }) {
 
   /* ── Hydratation au montage ────────────────────────────── */
   useEffect(() => {
-    const token  = localStorage.getItem('ttt_token')
+    const token = localStorage.getItem('ttt_token')
     if (!token) { setLoading(false); return }
 
     // Pré-remplir depuis le cache (affichage rapide)
     const cached = localStorage.getItem('ttt_user')
-    if (cached) { try { setUser(normalizeUser(JSON.parse(cached))) } catch {} }
+    if (cached) {
+      try { setUser(normalizeUser(JSON.parse(cached))) } catch {}
+    }
 
-    // Vérifier avec le serveur pour avoir les données fraîches + rôle correct
+    // Vérifier avec le serveur pour avoir les données fraîches
     authApi.me()
       .then((u) => {
         const normalized = normalizeUser(u)
@@ -45,21 +55,20 @@ export function AuthProvider({ children }) {
 
   /* ── Login ─────────────────────────────────────────────── */
   const login = useCallback(async (creds) => {
-    // Réponse déballée : { user: {...}, token: "..." }
     const data = await authApi.login(creds)
 
-    // Sécurité : si la structure est inattendue on tente les deux formats
     const rawUser  = data?.user  ?? data
     const rawToken = data?.token ?? data?.access_token
 
     if (!rawToken) throw new Error('Token manquant dans la réponse de connexion')
 
-    // Appel /me pour s'assurer d'avoir le rôle chargé correctement
     localStorage.setItem('ttt_token', rawToken)
+
+    // Appel /me pour garantir que le rôle est bien chargé
     let normalized
     try {
       const fresh = await authApi.me()
-      normalized = normalizeUser(fresh)
+      normalized  = normalizeUser(fresh)
     } catch {
       normalized = normalizeUser(rawUser)
     }
@@ -74,6 +83,7 @@ export function AuthProvider({ children }) {
     const data     = await authApi.register(body)
     const rawUser  = data?.user  ?? data
     const rawToken = data?.token ?? data?.access_token
+
     if (rawToken) {
       localStorage.setItem('ttt_token', rawToken)
       const normalized = normalizeUser(rawUser)
@@ -91,7 +101,7 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
-  // user.role est normalisé en minuscule : "admin" | "employee" | "user"
+  // user.role est normalisé en minuscule : "admin" | "employee" | "user" | null
   const isAdmin    = user?.role === 'admin'
   const isEmployee = user?.role === 'employee' || user?.role === 'admin'
   const isUser     = !!user

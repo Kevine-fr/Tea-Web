@@ -214,15 +214,6 @@ export default function AdminGainsTab({ search = '' }) {
                                 {noR ? '+ Statut' : 'Statut'}
                               </button>
 
-                              {/* Supprimer réclamation (bloqué si 'completed') */}
-                              {!noR && p.redemption.status !== 'completed' && (
-                                <button className="btn btn-outline"
-                                  style={{ padding: '.28rem .6rem', fontSize: '.78rem', color: 'var(--error)', borderColor: 'var(--error)' }}
-                                  title="Supprimer la réclamation"
-                                  onClick={() => setModal({ type: 'delRedemption', data: p })}>
-                                  🗑
-                                </button>
-                              )}
 
                               {/* Supprimer participation */}
                               <button className="btn btn-outline"

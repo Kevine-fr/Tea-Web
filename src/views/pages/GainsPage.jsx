@@ -91,6 +91,22 @@ const STYLES = `
     animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite;
   }
 
+  .s-lost {
+    animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite;
+  }
+
+  .s-won {
+    animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite;
+  }
+
+  .s-done {
+    animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite;
+  }
+
+  .s-pending {
+    animation: badgePop .35s ease both, tickerBlink 2.2s ease-in-out .8s infinite;
+  }
+
   /* ── État vide ── */
   .gains-empty {
     animation: fadeScaleIn .5s ease both;
@@ -131,10 +147,11 @@ const STYLES = `
 `
 
 const STATUS = {
+  waiting:   { label: 'En attente',             cls: 's-lost' },
   pending:   { label: 'En préparation',         cls: 's-prep' },
   approved:  { label: 'Disponible en boutique', cls: 's-won'  },
   completed: { label: 'Remis',                  cls: 's-done' },
-  rejected:  { label: 'Refusé',                 cls: 's-lost' },
+  rejected:  { label: 'Refusé',                 cls: 's-pending' },
 }
 
 export default function GainsPage() {
@@ -231,7 +248,7 @@ export default function GainsPage() {
                     const code      = p.ticket_code?.code ?? p.ticket_code_id?.slice(0, 8) ?? '—'
                     const prizeName = p.prize?.name ?? 'Gain'
                     const redem     = p.redemption
-                    const s         = redem ? (STATUS[redem.status] || STATUS.pending) : STATUS.pending
+                    const s         = redem ? (STATUS[redem.status] || STATUS.pending) : STATUS.waiting
                     const dateRef   = redem?.requested_at ?? p.participation_date
 
                     return (
