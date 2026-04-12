@@ -81,25 +81,29 @@ const STYLES = `
     animation: footerCopyIn .5s ease .45s both;
   }
 
-  /* ── Responsive ── */
+  /* ── Desktop ── */
   .footer-hero   { display: flex; align-items: center; padding: 0 4rem; }
   .footer-grid   { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; padding: 0 10rem; }
   .footer-bottom { padding: 0.75rem 4rem 1.5rem; text-align: right; }
 
-  /* Tablette */
+  /* ── Tablette ── */
   @media (max-width: 1100px) {
-    .footer-hero  { padding: 0 2rem; }
-    .footer-grid  { padding: 0 2rem; gap: 1.5rem; }
-    .footer-bottom { padding: 0.75rem 2rem 1.5rem; }
+    .footer-hero  { padding: 1.5rem 2rem 0; flex-direction: column; align-items: center; text-align: center; gap: 0.75rem; }
+    .footer-grid  { padding: 0 2rem; gap: 1.5rem; text-align: center; }
+    .footer-col   { display: flex; flex-direction: column; align-items: center; }
+    .footer-social-link { justify-content: center; }
+    .footer-bottom { padding: 0.75rem 2rem 1.5rem; text-align: center; }
+    .footer-link::after { left: 50%; transform: translateX(-50%); }
   }
 
-  /* Mobile */
+  /* ── Mobile ── */
   @media (max-width: 768px) {
     .footer-hero {
       flex-direction: column;
-      align-items: flex-start;
+      align-items: center;
       padding: 1.5rem 1.5rem 0;
       gap: 0.75rem;
+      text-align: center;
     }
     .footer-logo-img {
       height: 140px !important;
@@ -108,14 +112,18 @@ const STYLES = `
       grid-template-columns: 1fr !important;
       padding: 1rem 1.5rem !important;
       gap: 1.5rem;
+      text-align: center;
     }
+    .footer-col   { display: flex; flex-direction: column; align-items: center; }
+    .footer-social-link { justify-content: center; }
     .footer-bottom {
       padding: 0.75rem 1.5rem 1.5rem !important;
       text-align: center !important;
     }
+    .footer-link::after { left: 50%; transform: translateX(-50%); }
   }
 
-  /* Petit mobile */
+  /* ── Petit mobile ── */
   @media (max-width: 480px) {
     .footer-hero { padding: 1.25rem 1rem 0; }
     .footer-grid { padding: 1rem !important; }

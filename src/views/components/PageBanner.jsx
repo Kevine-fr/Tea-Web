@@ -111,7 +111,7 @@ export default function PageBanner({ title }) {
           src="/images/Jeu/img_02.png"
           alt="Fleur"
           className="banner-leaf-left"
-          style={{ width: '10%', opacity: 0.85, transform: 'scaleX(-1)', flexShrink: 0 }}
+          style={{ width: '7.5%', opacity: 0.85, transform: 'scaleX(-1)', flexShrink: 0 }}
         />
 
         <div
@@ -156,7 +156,7 @@ export default function PageBanner({ title }) {
           src="/images/Jeu/img_02.png"
           alt="Fleur"
           className="banner-leaf-right"
-          style={{ width: '10%', opacity: 0.85, flexShrink: 0 }}
+          style={{ width: '7.5%', opacity: 0.85, flexShrink: 0 }}
         />
       </div>
     </div>

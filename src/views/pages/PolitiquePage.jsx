@@ -72,7 +72,7 @@ export default function PolitiquePage() {
   return (
     <Layout>
       <style>{CSS}</style>
-      <PageBanner title="Politique de confidentialité" />
+      <PageBanner title="Politique" />
       <section style={{ position: 'relative', background: 'var(--cream)', padding: '3rem 1.5rem 4rem', overflow: 'hidden' }}>
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 820, margin: '0 auto' }}>
           <h2 ref={titleRef} style={{ textAlign: 'center', marginBottom: '0.75rem', opacity: 0 }}>
