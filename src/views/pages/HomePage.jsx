@@ -1,14 +1,31 @@
 // src/views/pages/HomePage.jsx
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import AnimatedLeaves from '../components/AnimatedLeaves.jsx'
 
+/* ─── Particules de fond ──────────────────────────────────── */
+const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
+  id: i, left: `${4 + (i * 5.2) % 92}%`,
+  size: 3 + (i % 5), dur: 8 + (i % 7),
+  delay: (i * 0.65) % 10, opacity: 0.05 + (i % 4) * 0.02,
+}))
+
+/* ─── Sparkles fixes ──────────────────────────────────────── */
+const SPARKS = [
+  { left: '8%',  top: '20%', s: 8,  dur: '3.6s', del: '0.2s' },
+  { left: '90%', top: '12%', s: 6,  dur: '4.5s', del: '1.1s' },
+  { left: '20%', top: '80%', s: 9,  dur: '3.9s', del: '0.8s' },
+  { left: '82%', top: '72%', s: 7,  dur: '5.2s', del: '2.0s' },
+  { left: '52%', top: '6%',  s: 6,  dur: '4.1s', del: '1.6s' },
+  { left: '5%',  top: '55%', s: 5,  dur: '3.3s', del: '3.0s' },
+]
+
 const CSS = `
 /* ─── Entrées ────────────────────────────────────────────── */
-@keyframes fadeInLeft  { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:none} }
-@keyframes fadeInRight { from{opacity:0;transform:translateX(50px)}  to{opacity:1;transform:none} }
+@keyframes fadeInLeft  { from{opacity:0;transform:translateX(-40px) scale(.97)} to{opacity:1;transform:none} }
+@keyframes fadeInRight { from{opacity:0;transform:translateX(50px)  scale(.97)} to{opacity:1;transform:none} }
 @keyframes fadeInDown  { from{opacity:0;transform:translateY(-24px) rotate(-5deg)} to{opacity:1;transform:rotate(-5deg)} }
 @keyframes fadeInUp    { from{opacity:0;transform:translateY(28px)}  to{opacity:1;transform:none} }
 @keyframes fadeInUpSoft {
@@ -27,7 +44,7 @@ const CSS = `
   75%      { transform: rotate(-1.4deg) translateY(-2px); }
 }
 @keyframes steamDrift {
-  0%,100% { transform: translateY(0) scaleX(1);      opacity:0.50; }
+  0%,100% { transform: translateY(0) scaleX(1);       opacity:0.50; }
   33%      { transform: translateY(-7px) scaleX(1.06); opacity:0.62; }
   66%      { transform: translateY(-3px) scaleX(0.94); opacity:0.44; }
 }
@@ -40,12 +57,35 @@ const CSS = `
   to   { transform: rotate(450deg); }
 }
 @keyframes badgePulse {
-  0%,100% { box-shadow: 0 0 0 0   rgba(26,60,46,0); }
+  0%,100% { box-shadow: 0 0 0 0    rgba(26,60,46,0); }
   50%      { box-shadow: 0 0 18px 4px rgba(26,60,46,.18); }
 }
 @keyframes hundredPulse {
   0%,100% { transform: scale(1); }
   50%      { transform: scale(1.04); }
+}
+
+/* ─── Particules / Sparkles ──────────────────────────────── */
+@keyframes particleRise {
+  0%   { transform:translateY(0) rotate(0deg);   opacity:0; }
+  8%   { opacity:1; }
+  92%  { opacity:1; }
+  100% { transform:translateY(-90vh) rotate(360deg); opacity:0; }
+}
+@keyframes sparkle {
+  0%,100% { opacity:0; transform:scale(0)   rotate(0deg);   }
+  40%      { opacity:1; transform:scale(1)   rotate(180deg); }
+  70%      { opacity:.6; transform:scale(.7) rotate(270deg); }
+}
+
+/* ─── Hero card shimmer ───────────────────────────────────── */
+@keyframes heroShimmerSweep {
+  0%   { transform:translateX(-140%) skewX(-14deg); }
+  100% { transform:translateX(240%)  skewX(-14deg); }
+}
+@keyframes heroCardHue {
+  0%,100% { background-color: #EEE1CE; }
+  50%      { background-color: #E8D8BC; }
 }
 
 /* ─── Bouton CTA ─────────────────────────────────────────── */
@@ -58,6 +98,10 @@ const CSS = `
   70%  { box-shadow: 0 4px 16px rgba(232,67,26,.35), 0 0 0 14px rgba(232,67,26,0); }
   100% { box-shadow: 0 4px 16px rgba(232,67,26,.35), 0 0 0 0    rgba(232,67,26,0); }
 }
+@keyframes ripple {
+  from { transform:scale(0); opacity:.4; }
+  to   { transform:scale(5); opacity:0; }
+}
 
 /* ─── Step cards ─────────────────────────────────────────── */
 @keyframes numberBounce {
@@ -66,19 +110,21 @@ const CSS = `
   60%      { transform: scale(0.95) translateY(1px); }
 }
 @keyframes stepImgSpin {
-  0%   { transform: rotate(0deg) scale(1); }
-  25%  { transform: rotate(6deg) scale(1.08); }
+  0%   { transform: rotate(0deg)  scale(1); }
+  25%  { transform: rotate(6deg)  scale(1.08); }
   75%  { transform: rotate(-6deg) scale(1.08); }
-  100% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(0deg)  scale(1); }
 }
 @keyframes tagGlow {
-  0%,100% { opacity: 1; text-shadow: none; }
-  50%      { opacity: 1; text-shadow: 0 0 12px rgba(107,107,107,.3); }
+  0%,100% { opacity:1; text-shadow:none; }
+  50%      { opacity:1; text-shadow:0 0 12px rgba(107,107,107,.3); }
 }
 
-/* ════════════════════════════════════════════════════════════
-   CLASSES IDLE — actives après la fin des entrées
-   ════════════════════════════════════════════════════════════ */
+/* ─── Déco tournante ─────────────────────────────────────── */
+@keyframes decoSpin  { from{transform:rotate(0deg)}   to{transform:rotate(360deg)} }
+@keyframes decoSpinR { from{transform:rotate(0deg)}   to{transform:rotate(-360deg)} }
+
+/* ═══ CLASSES IDLE ═══════════════════════════════════════ */
 .cup-idle    { animation: cupFloat    3.2s ease-in-out infinite !important; }
 .tin-idle    { animation: tinSway     4.5s ease-in-out infinite !important; }
 .steam-idle  { animation: steamDrift  2.8s ease-in-out infinite !important; }
@@ -86,15 +132,13 @@ const CSS = `
 .badge-idle  { animation: badgePulse  3s   ease-in-out infinite !important; }
 
 /* ─── Hover — Tag ── */
-.home-tag:hover {
-  animation: tagGlow 1.2s ease-in-out infinite !important;
-  cursor: default;
-}
+.home-tag:hover { animation: tagGlow 1.2s ease-in-out infinite !important; cursor:default; }
+
 /* ─── Hover — Badge vert ── */
 .home-badge { transition: transform .25s ease; }
 .home-badge:hover { transform: scale(1.03) !important; }
 
-/* ─── Hover — images (accélère l'idle + ombre) ── */
+/* ─── Hover — images ── */
 .home-cup:hover {
   animation: cupFloat 1.2s ease-in-out infinite !important;
   filter: drop-shadow(0 16px 28px rgba(0,0,0,.28)) !important;
@@ -117,54 +161,52 @@ const CSS = `
 
 /* ─── Bouton CTA ── */
 .home-cta-btn {
-  position: relative;
-  overflow: hidden;
+  position: relative; overflow: hidden;
   transition: transform .2s ease !important;
+}
+.home-cta-btn .home-ripple {
+  position: absolute; border-radius: 50%;
+  width: 20px; height: 20px;
+  background: rgba(255,255,255,.45);
+  transform: scale(0);
+  animation: ripple .7s linear;
+  pointer-events: none;
 }
 .home-cta-btn::after {
   content: '';
   position: absolute; inset: 0;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent);
   background-size: 200% 100%;
-  border-radius: 50px;
-  opacity: 0;
-  transition: opacity .2s;
+  border-radius: 50px; opacity: 0; transition: opacity .2s;
 }
 .home-cta-btn:hover {
   transform: translateY(-3px) !important;
   animation: homePulseRing 1.4s ease-out infinite !important;
 }
-.home-cta-btn:hover::after {
-  opacity: 1;
-  animation: homeShimmer 1s linear infinite;
-}
+.home-cta-btn:hover::after { opacity:1; animation: homeShimmer 1s linear infinite; }
 .home-cta-btn:active { transform: translateY(-1px) !important; }
 
 /* ─── "100% Gagnant" ── */
 .home-hundred { animation: hundredPulse 3s ease-in-out infinite; }
 .home-hundred:hover { animation: hundredPulse .8s ease-in-out infinite !important; }
 
-/* ─── "Comment ça marche?" underline ── */
-.home-how-title { position: relative; display: inline-block; }
+/* ─── Underline "Comment ça marche?" ── */
+.home-how-title { position:relative; display:inline-block; }
 .home-how-title::after {
-  content: '';
-  position: absolute;
-  bottom: -3px; left: 0;
-  width: 0; height: 2px;
-  background: #1a3c2e;
-  border-radius: 2px;
+  content:''; position:absolute; bottom:-3px; left:0;
+  width:0; height:2px; background:#1a3c2e; border-radius:2px;
   transition: width .3s ease;
 }
-.home-how-title:hover::after { width: 100%; }
+.home-how-title:hover::after { width:100%; }
 
 /* ─── Step cards ── */
-.step-card-wrapper { cursor: default; }
+.step-card-wrapper { cursor:default; }
 .step-card-inner {
-  transition: transform .3s cubic-bezier(.22,.68,0,1.2), box-shadow .3s ease;
+  transition: transform .35s cubic-bezier(.22,.68,0,1.2), box-shadow .35s ease;
 }
 .step-card-wrapper:hover .step-card-inner {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 44px rgba(0,0,0,.28) !important;
+  transform: translateY(-10px);
+  box-shadow: 0 24px 48px rgba(0,0,0,.30) !important;
 }
 .step-card-wrapper:hover .step-number {
   animation: numberBounce .5s cubic-bezier(.22,.68,0,1.4) both;
@@ -176,12 +218,39 @@ const CSS = `
   letter-spacing: 0.04em;
   transition: letter-spacing .3s ease;
 }
+
+/* ─── Sparkles & Particules ── */
+.home-spark {
+  position:absolute; pointer-events:none; z-index:1;
+  animation: sparkle ease-in-out infinite;
+}
+.home-spark::before, .home-spark::after {
+  content:''; position:absolute;
+  background: rgba(180,100,40,.45); border-radius:1px;
+}
+.home-spark::before { width:2px; height:10px; top:-5px; left:0; }
+.home-spark::after  { width:10px; height:2px; top:0; left:-5px; }
+
+.home-particle {
+  position:absolute; border-radius:50%;
+  background:rgba(200,114,58,.6); pointer-events:none;
+  animation: particleRise linear infinite;
+}
+
+/* ─── Hero card shimmer continu ── */
+.hero-shimmer {
+  position:absolute; inset:0; border-radius:24px;
+  overflow:hidden; pointer-events:none; z-index:1;
+}
+.hero-shimmer::after {
+  content:'';
+  position:absolute; top:0; left:0;
+  width:30%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  animation: heroShimmerSweep 5s ease-in-out 2s infinite;
+}
 `
 
-/* ─── Démarre l'idle après l'entrée ─────────────────────────
-   finalStyles : styles à figer AVANT de retirer l'animation
-   inline, pour que l'élément ne revienne pas à opacity:0
-   ──────────────────────────────────────────────────────────── */
 function startIdleAfterEntry(el, idleClass, entryDurationMs, finalStyles = {}) {
   if (!el) return
   const timer = setTimeout(() => {
@@ -216,16 +285,39 @@ function useWindowWidth() {
   return width
 }
 
+/* ─── Tilt 3D sur les step cards ─────────────────────────── */
 function StepCard({ n, img, label, visible, delay, isMobile }) {
+  const wrapRef = useRef(null)
+
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el || isMobile) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const inner = el.querySelector('.step-card-inner')
+    const onMove = (e) => {
+      const r = el.getBoundingClientRect()
+      const x = ((e.clientX - r.left) / r.width  - 0.5) * 16
+      const y = ((e.clientY - r.top)  / r.height - 0.5) * -16
+      inner.style.transform = `perspective(600px) rotateY(${x}deg) rotateX(${y}deg) translateY(-10px) scale(1.02)`
+    }
+    const onLeave = () => { inner.style.transform = '' }
+    el.addEventListener('mousemove', onMove)
+    el.addEventListener('mouseleave', onLeave)
+    return () => {
+      el.removeEventListener('mousemove', onMove)
+      el.removeEventListener('mouseleave', onLeave)
+    }
+  }, [isMobile])
+
   return (
-    <div className="step-card-wrapper" style={{
+    <div ref={wrapRef} className="step-card-wrapper" style={{
       position: 'relative', paddingTop: 22,
       width: isMobile ? '100%' : 350,
       maxWidth: isMobile ? 320 : 350,
       flexShrink: 0,
       opacity: visible ? 1 : 0,
       transform: visible ? 'translateY(0)' : 'translateY(40px)',
-      transition: `opacity .55s ease ${delay}s, transform .55s ease ${delay}s`,
+      transition: `opacity .55s ease ${delay}s, transform .6s cubic-bezier(.22,.68,0,1.1) ${delay}s`,
     }}>
       <div className="step-number" style={{
         position: 'absolute', top: 0, left: 18, zIndex: 3,
@@ -241,6 +333,7 @@ function StepCard({ n, img, label, visible, delay, isMobile }) {
       <div className="step-card-inner" style={{
         borderRadius: 16, overflow: 'hidden',
         boxShadow: '0 8px 28px rgba(0,0,0,.30)',
+        willChange: 'transform',
       }}>
         <div style={{
           background: '#EEE1CE',
@@ -275,6 +368,7 @@ export default function HomePage() {
   const cupRef    = useRef(null)
   const tinRef    = useRef(null)
   const steamRef  = useRef(null)
+  const heroRef   = useRef(null)
 
   const [stepsRef, stepsVis] = useReveal(0.04)
   const width = useWindowWidth()
@@ -283,8 +377,8 @@ export default function HomePage() {
   const isMobile      = width <= 768
   const isSmallMobile = width <= 480
 
+  /* ── Animations d'entrée + passage idle ── */
   useEffect(() => {
-    /* ── Animations d'entrée ── */
     const seq = [
       { el: tagRef.current,    anim: 'fadeInLeft   .55s ease .08s both' },
       { el: badgeRef.current,  anim: 'fadeInLeft   .55s ease .24s both' },
@@ -297,15 +391,50 @@ export default function HomePage() {
     ]
     seq.forEach(({ el, anim }) => { if (el) el.style.animation = anim })
 
-    /* ── Passage en idle après l'entrée ── */
     const cleanups = [
-      startIdleAfterEntry(cupRef.current,    'cup-idle',    1100, { opacity: '1', transform: 'none' }),
-      startIdleAfterEntry(tinRef.current,    'tin-idle',    1300, { opacity: '1', transform: 'none' }),
-      startIdleAfterEntry(steamRef.current,  'steam-idle',  2100, { opacity: '0.5', transform: 'none' }),
-      startIdleAfterEntry(ticketRef.current, 'ticket-idle', 1400, { opacity: '1', transform: 'rotate(-5deg)' }),
-      startIdleAfterEntry(tagRef.current,    null,           800,  { opacity: '1', transform: 'none' }),
+      startIdleAfterEntry(cupRef.current,    'cup-idle',    1100, { opacity:'1', transform:'none' }),
+      startIdleAfterEntry(tinRef.current,    'tin-idle',    1300, { opacity:'1', transform:'none' }),
+      startIdleAfterEntry(steamRef.current,  'steam-idle',  2100, { opacity:'0.5', transform:'none' }),
+      startIdleAfterEntry(ticketRef.current, 'ticket-idle', 1400, { opacity:'1', transform:'rotate(-5deg)' }),
+      startIdleAfterEntry(tagRef.current,    null,           800,  { opacity:'1', transform:'none' }),
     ]
     return () => cleanups.forEach(c => c?.())
+  }, [])
+
+  /* ── Parallaxe souris sur les images flottantes ── */
+  useEffect(() => {
+    if (isTablet) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const onMouseMove = (e) => {
+      const cx = window.innerWidth  / 2
+      const cy = window.innerHeight / 2
+      const dx = (e.clientX - cx) / cx
+      const dy = (e.clientY - cy) / cy
+
+      if (cupRef.current?.classList.contains('cup-idle')) {
+        cupRef.current.style.transform = `translateY(${dy * -10}px) translateX(${dx * 6}px)`
+      }
+      if (tinRef.current?.classList.contains('tin-idle')) {
+        tinRef.current.style.transform = `translateY(${dy * -6}px) translateX(${dx * 4}px) rotate(${dx * 1}deg)`
+      }
+      if (steamRef.current?.classList.contains('steam-idle')) {
+        steamRef.current.style.transform = `translateY(${dy * -14}px) translateX(${dx * 8}px)`
+      }
+    }
+    window.addEventListener('mousemove', onMouseMove, { passive: true })
+    return () => window.removeEventListener('mousemove', onMouseMove)
+  }, [isTablet])
+
+  /* ── Ripple sur le bouton CTA ── */
+  const addRipple = useCallback((e) => {
+    const btn = e.currentTarget
+    const r = btn.getBoundingClientRect()
+    const span = document.createElement('span')
+    span.className = 'home-ripple'
+    span.style.left = `${e.clientX - r.left - 10}px`
+    span.style.top  = `${e.clientY - r.top  - 10}px`
+    btn.appendChild(span)
+    span.addEventListener('animationend', () => span.remove())
   }, [])
 
   return (
@@ -319,106 +448,113 @@ export default function HomePage() {
         }}>
           <AnimatedLeaves />
 
+          {/* Particules montantes */}
+          {PARTICLES.map(p => (
+            <div key={p.id} className="home-particle" style={{
+              left: p.left, bottom: '-10px',
+              width: `${p.size}px`, height: `${p.size}px`,
+              opacity: p.opacity,
+              animationDuration: `${p.dur}s`, animationDelay: `${p.delay}s`,
+            }} />
+          ))}
+
+          {/* Sparkles */}
+          {SPARKS.map((s, i) => (
+            <span key={i} className="home-spark" style={{
+              left: s.left, top: s.top,
+              width: `${s.s}px`, height: `${s.s}px`,
+              animationDuration: s.dur, animationDelay: s.del,
+            }} />
+          ))}
+
+          {/* Cercles déco tournants */}
+          <div style={{
+            position:'absolute', borderRadius:'50%', pointerEvents:'none',
+            width:500, height:500, top:-200, left:-150, zIndex:0,
+            border:'1.5px dashed rgba(26,60,46,.07)',
+            animation:'decoSpin 40s linear infinite',
+          }} />
+          <div style={{
+            position:'absolute', borderRadius:'50%', pointerEvents:'none',
+            width:300, height:300, bottom:-80, right:-80, zIndex:0,
+            border:'1.5px dashed rgba(200,100,40,.07)',
+            animation:'decoSpinR 30s linear infinite',
+          }} />
+
           <img className="home-leaf" src="/images/Accueil/img_09.png" alt="" style={{
-            position: 'absolute', right: '5%', top: '-30%',
+            position:'absolute', right:'5%', top:'-30%',
             width: isMobile ? '50%' : 'auto',
-            zIndex: 1, transform: 'rotate(90deg)', pointerEvents: 'none',
+            zIndex:1, transform:'rotate(90deg)', pointerEvents:'none',
           }} />
           <img className="home-leaf" src="/images/Accueil/img_09.png" alt="" style={{
-            position: 'absolute', right: isMobile ? '5%' : '20%', bottom: '-30%',
+            position:'absolute', right: isMobile ? '5%' : '20%', bottom:'-30%',
             width: isMobile ? '50%' : 'auto',
-            zIndex: 1, transform: 'rotate(90deg)', pointerEvents: 'none',
+            zIndex:1, transform:'rotate(90deg)', pointerEvents:'none',
           }} />
 
           {/* ════ HERO CARD ════ */}
-          <div style={{
-            zIndex: 2,
-            padding: isMobile ? '2rem 1.25rem' : '3.5rem 2rem',
-            margin: isMobile
-              ? '1.25rem 1rem 0 1rem'
-              : isTablet
-                ? '2rem 2rem 0 2rem'
-                : '3rem 10rem 0 10rem',
-            position: 'relative', borderRadius: 24,
-            background: '#EEE1CE', border: '1px solid #e2d9c8',
-            boxShadow: '0 6px 40px rgba(0,0,0,.08)', overflow: 'visible',
-            display: 'grid',
-            gridTemplateColumns: isTablet ? '1fr' : '38% 62%',
-            gap: isTablet ? '2rem' : 0,
-          }}>
+          <div
+            ref={heroRef}
+            style={{
+              zIndex:2,
+              padding: isMobile ? '2rem 1.25rem' : '3.5rem 2rem',
+              margin: isMobile
+                ? '1.25rem 1rem 0 1rem'
+                : isTablet
+                  ? '2rem 2rem 0 2rem'
+                  : '3rem 10rem 0 10rem',
+              position:'relative', borderRadius:24,
+              background:'#EEE1CE', border:'1px solid #e2d9c8',
+              boxShadow:'0 6px 40px rgba(0,0,0,.08)', overflow:'visible',
+              display:'grid',
+              gridTemplateColumns: isTablet ? '1fr' : '38% 62%',
+              gap: isTablet ? '2rem' : 0,
+              animation:'heroCardHue 10s ease-in-out 3s infinite',
+            }}
+          >
+            {/* Shimmer sweep sur le hero */}
+            <div className="hero-shimmer" />
 
             {/* ── Colonne gauche : texte ── */}
-            <div style={{ position: 'relative', zIndex: 2 }}>
+            <div style={{ position:'relative', zIndex:2 }}>
               <p ref={tagRef} className="home-tag" style={{
                 fontSize: isMobile ? '1rem' : isTablet ? '1.2rem' : '1.5rem',
-                fontWeight: 700, letterSpacing: isMobile ? '0.08em' : '0.18em',
-                textTransform: 'uppercase', color: '#6b6b6b',
-                marginBottom: '0.85rem', opacity: 0,
+                fontWeight:700, letterSpacing: isMobile ? '0.08em' : '0.18em',
+                textTransform:'uppercase', color:'#6b6b6b',
+                marginBottom:'0.85rem', opacity:0,
               }}>
                 PARTICIPEZ AU JEU-CONCOURS
               </p>
 
-                <div
-                  ref={badgeRef}
-                  className="home-badge"
-                  style={{
-                    position: 'relative',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: isMobile ? '1.4rem' : '1.2rem',
-                    opacity: 0,
-                    /* padding horizontal = espace texte sur le tape */
-                    padding: isMobile ? '0.55rem 2.8rem' : '0.65rem 3.5rem',
-                    /* min-height pour que le tape soit visible même si texte court */
-                    minHeight: isMobile ? 52 : 60,
-                  }}
-                >
-                  {/* Image tape — rotate(90deg) pour la coucher horizontalement */}
-                  <img
-                    src="/images/Accueil/img_03.png"
-                    alt=""
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      /*
-                       * rotate(90deg) : l'image verticale devient un bandeau horizontal.
-                       * La hauteur CSS de l'img devient la largeur visuelle du tape.
-                       * On la force à 180deg (tel que demandé) pour avoir le bon côté du tape.
-                       * => rotate(90deg) pour horizontaliser + scaleX(-1) si besoin de miroir.
-                       * L'utilisateur demande 180deg → on utilise rotate(180deg) qui
-                       * redresse le tape avec l'autre bout en haut, puis rotate(90deg)
-                       * l'allonge horizontalement : résultat = rotate(90deg) + flip.
-                       */
-                      transform: 'translate(-50%, -50%) rotate(90deg) scaleY(-1)',
-                      /* height CSS = largeur visuelle du tape après rotation */
-                      height: isMobile ? '260px' : '360px',
-                      width: 'auto',
-                      zIndex: 0,
-                      pointerEvents: 'none',
-                      userSelect: 'none',
-                    }}
-                  />
-                  {/* Texte par-dessus le tape */}
-                  <span style={{
-                    position: 'relative',
-                    zIndex: 1,
-                    fontFamily: "'Dancing Script', cursive",
-                    fontSize: isMobile ? '2.1rem' : '2.6rem',
-                    color: '#fff',
-                    fontWeight: 600,
-                    whiteSpace: 'nowrap',
-                    textShadow: '0 1px 4px rgba(0,0,0,.18)',
-                    lineHeight: 1,
-                  }}>
-                    Thé Tip Top
-                  </span>
-                </div>
+              <div ref={badgeRef} className="home-badge" style={{
+                position:'relative',
+                display:'inline-flex', alignItems:'center', justifyContent:'center',
+                marginBottom: isMobile ? '1.4rem' : '1.2rem',
+                opacity:0,
+                padding: isMobile ? '0.55rem 2.8rem' : '0.65rem 3.5rem',
+                minHeight: isMobile ? 52 : 60,
+              }}>
+                <img src="/images/Accueil/img_03.png" alt="" style={{
+                  position:'absolute', top:'50%', left:'50%',
+                  transform:'translate(-50%, -50%) rotate(90deg) scaleY(-1)',
+                  height: isMobile ? '260px' : '360px',
+                  width:'auto', zIndex:0, pointerEvents:'none', userSelect:'none',
+                }} />
+                <span style={{
+                  position:'relative', zIndex:1,
+                  fontFamily:"'Dancing Script', cursive",
+                  fontSize: isMobile ? '2.1rem' : '2.6rem',
+                  color:'#fff', fontWeight:600,
+                  whiteSpace:'nowrap',
+                  textShadow:'0 1px 4px rgba(0,0,0,.18)', lineHeight:1,
+                }}>
+                  Thé Tip Top
+                </span>
+              </div>
 
               <p ref={descRef} style={{
                 fontSize: isMobile ? '1rem' : isTablet ? '1.05rem' : '1.2rem',
-                lineHeight: 1.8, color: '#4a4a4a', opacity: 0,
+                lineHeight:1.8, color:'#4a4a4a', opacity:0,
                 maxWidth: isTablet ? '100%' : '90%',
               }}>
                 Célébrez l'ouverture de notre 10ème boutique à Nice avec notre jeu-concours
@@ -427,70 +563,69 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* ── Colonne droite : ticket + CTA ──
-                • Desktop  : position absolute, centré dans la zone droite de la grid
-                • Tablet/Mobile : position relative, flux normal sous le texte       */}
+            {/* ── Colonne droite : ticket + CTA ── */}
             <div style={{
               position: isTablet ? 'relative' : 'absolute',
               left:      isTablet ? 'auto' : '50%',
               top:       isTablet ? 'auto' : '35%',
               transform: isTablet ? 'none' : 'translate(-50%, -50%)',
-              zIndex: 8,
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', gap: '1.25rem',
+              zIndex:8,
+              display:'flex', flexDirection:'column',
+              alignItems:'center', gap:'1.25rem',
               width:     isTablet ? '100%' : 'auto',
               marginTop: isTablet ? '1rem' : 0,
             }}>
               <div ref={ticketRef} className="home-ticket" style={{
                 width: isMobile ? '100%' : isTablet ? '70%' : '95%',
                 maxWidth: isMobile ? 340 : 520,
-                transform: 'rotate(-5deg)',
-                filter: 'drop-shadow(0 8px 20px rgba(0,0,0,.18))',
-                opacity: 0,
+                transform:'rotate(-5deg)',
+                filter:'drop-shadow(0 8px 20px rgba(0,0,0,.18))',
+                opacity:0,
               }}>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position:'relative' }}>
                   <img src="/images/Accueil/img_06.png" alt="" style={{
-                    width: '100%', display: 'block', borderRadius: 8,
-                    transform: 'rotate(175deg)',
+                    width:'100%', display:'block', borderRadius:8,
+                    transform:'rotate(175deg)',
                   }} />
                   <div style={{
-                    position: 'absolute', top: '50%', left: '50%',
-                    transform: 'translate(-50%, -50%) rotate(-5deg)',
-                    textAlign: 'center', width: '72%',
+                    position:'absolute', top:'50%', left:'50%',
+                    transform:'translate(-50%, -50%) rotate(-5deg)',
+                    textAlign:'center', width:'72%',
                   }}>
                     <p style={{
-                      fontFamily: "'Playfair Display', serif", fontWeight: 700,
+                      fontFamily:"'Playfair Display', serif", fontWeight:700,
                       fontSize: isMobile ? '1.2rem' : '1.8rem',
-                      color: '#1a1a1a', marginBottom: '0.2rem', lineHeight: 1.3,
-                    }}>
-                      Tirage au sort final :
-                    </p>
+                      color:'#1a1a1a', marginBottom:'0.2rem', lineHeight:1.3,
+                    }}>Tirage au sort final :</p>
                     <p style={{
-                      fontFamily: "'Dancing Script', cursive",
+                      fontFamily:"'Dancing Script', cursive",
                       fontSize: isMobile ? '1.6rem' : '2.2rem',
-                      color: '#e8431a', fontWeight: 700, lineHeight: 1.15,
-                    }}>
-                      1 AN de thé offert
-                    </p>
-                    <div style={{ width: '55%', height: 1, background: 'rgba(170,130,40,.5)', margin: '0.25rem auto' }} />
-                    <p style={{ fontSize: isMobile ? '0.85rem' : '1rem', color: '#666', lineHeight: 1.5 }}>
+                      color:'#e8431a', fontWeight:700, lineHeight:1.15,
+                    }}>1 AN de thé offert</p>
+                    <div style={{ width:'55%', height:1, background:'rgba(170,130,40,.5)', margin:'0.25rem auto' }} />
+                    <p style={{ fontSize: isMobile ? '0.85rem' : '1rem', color:'#666', lineHeight:1.5 }}>
                       Jeu limité dans le temps.<br />Voir modalité en magasin et sur le site
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div ref={btnRef} style={{ opacity: 0 }}>
-                <Link to="/register" className="home-cta-btn" style={{
-                  display: 'inline-block',
-                  background: '#e8431a', color: '#fff',
-                  borderRadius: 50,
-                  padding: isMobile ? '0.8rem 2rem' : '0.9rem 2.5rem',
-                  fontSize: isMobile ? '0.95rem' : '1.05rem',
-                  fontWeight: 700, textDecoration: 'none',
-                  boxShadow: '0 4px 16px rgba(232,67,26,.35)',
-                  fontFamily: "'Lato', sans-serif",
-                }}>
+              <div ref={btnRef} style={{ opacity:0 }}>
+                <Link
+                  to="/register"
+                  className="home-cta-btn"
+                  onClick={addRipple}
+                  style={{
+                    display:'inline-block',
+                    background:'#e8431a', color:'#fff',
+                    borderRadius:50,
+                    padding: isMobile ? '0.8rem 2rem' : '0.9rem 2.5rem',
+                    fontSize: isMobile ? '0.95rem' : '1.05rem',
+                    fontWeight:700, textDecoration:'none',
+                    boxShadow:'0 4px 16px rgba(232,67,26,.35)',
+                    fontFamily:"'Lato', sans-serif",
+                  }}
+                >
                   Jouer maintenant
                 </Link>
               </div>
@@ -500,16 +635,16 @@ export default function HomePage() {
             {!isTablet && (
               <>
                 <img ref={steamRef} className="home-steam" src="/images/Accueil/img_10.png" alt="" style={{
-                  position: 'absolute', bottom: '50%', right: '14.5%',
-                  width: '11.5%', opacity: 0, zIndex: 6,
+                  position:'absolute', bottom:'50%', right:'14.5%',
+                  width:'11.5%', opacity:0, zIndex:6,
                 }} />
                 <img ref={cupRef} className="home-cup" src="/images/Accueil/img_02.png" alt="" style={{
-                  position: 'absolute', bottom: '0%', right: '7.5%',
-                  height: '70%', width: 'auto', zIndex: 5, opacity: 0,
+                  position:'absolute', bottom:'0%', right:'7.5%',
+                  height:'70%', width:'auto', zIndex:5, opacity:0,
                 }} />
                 <img ref={tinRef} className="home-tin" src="/images/Accueil/img_01.png" alt="" style={{
-                  position: 'absolute', top: '0%', right: '0%',
-                  height: '100%', width: 'auto', zIndex: 4, opacity: 0,
+                  position:'absolute', top:'0%', right:'0%',
+                  height:'100%', width:'auto', zIndex:4, opacity:0,
                 }} />
               </>
             )}
@@ -517,58 +652,58 @@ export default function HomePage() {
 
           {/* ════ SECTION STEPS ════ */}
           <div ref={stepsRef} style={{
-            position: 'relative', zIndex: 2,
+            position:'relative', zIndex:2,
             margin: isMobile ? '1.5rem 1rem 0 1rem' : isTablet ? '2rem 2rem 0 2rem' : '0 8rem',
-            display: 'flex',
+            display:'flex',
             alignItems: isTablet ? 'stretch' : 'center',
             justifyContent: isTablet ? 'center' : 'flex-start',
-            flexWrap: 'wrap',
+            flexWrap:'wrap',
             gap: isMobile ? '1.25rem' : '3rem',
           }}>
             <div style={{
-              display: 'flex', alignItems: 'center',
+              display:'flex', alignItems:'center',
               justifyContent: isMobile ? 'center' : 'flex-start',
               width: isTablet ? '100%' : 'auto',
               flexWrap: isSmallMobile ? 'wrap' : 'nowrap',
             }}>
               <div className="home-hundred" style={{
                 height: isMobile ? 180 : 265,
-                position: 'relative', flexShrink: 0,
+                position:'relative', flexShrink:0,
                 opacity: stepsVis ? 1 : 0,
                 transform: stepsVis ? 'scale(1)' : 'scale(0.78)',
-                transition: 'opacity .55s ease, transform .55s ease',
+                transition:'opacity .55s ease, transform .6s cubic-bezier(.22,.68,0,1.2)',
               }}>
-                <img src="/images/Accueil/img_05.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <img src="/images/Accueil/img_05.png" alt="" style={{ width:'100%', height:'100%', objectFit:'contain' }} />
                 <div style={{
-                  position: 'absolute', inset: 0,
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center',
+                  position:'absolute', inset:0,
+                  display:'flex', flexDirection:'column',
+                  alignItems:'center', justifyContent:'center',
                 }}>
                   <span style={{
-                    fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
-                    color: '#fff', fontSize: isMobile ? '1.45rem' : '2.2rem', lineHeight: 1,
+                    fontFamily:"'Playfair Display',serif", fontStyle:'italic',
+                    color:'#fff', fontSize: isMobile ? '1.45rem' : '2.2rem', lineHeight:1,
                   }}>100%</span>
                   <span style={{
-                    fontFamily: "'Playfair Display',serif", fontStyle: 'italic',
-                    color: '#fff', fontSize: isMobile ? '1.45rem' : '2.2rem',
+                    fontFamily:"'Playfair Display',serif", fontStyle:'italic',
+                    color:'#fff', fontSize: isMobile ? '1.45rem' : '2.2rem',
                   }}>Gagnant</span>
                 </div>
               </div>
 
               <div style={{
                 padding: isMobile ? '0.8rem 1rem' : '1rem',
-                backgroundColor: '#EEE1CE',
-                borderTopRightRadius: '25px', borderBottomRightRadius: '25px',
+                backgroundColor:'#EEE1CE',
+                borderTopRightRadius:'25px', borderBottomRightRadius:'25px',
                 width: isSmallMobile ? '100%' : 'auto',
                 textAlign: isSmallMobile ? 'center' : 'left',
               }}>
                 <h2 className="home-how-title" style={{
-                  fontFamily: "'Playfair Display',serif", color: '#1a3c2e',
-                  fontSize: isMobile ? '1.2rem' : '1.55rem', margin: 0,
+                  fontFamily:"'Playfair Display',serif", color:'#1a3c2e',
+                  fontSize: isMobile ? '1.2rem' : '1.55rem', margin:0,
                   whiteSpace: isSmallMobile ? 'normal' : 'nowrap',
                   opacity: stepsVis ? 1 : 0,
                   transform: stepsVis ? 'none' : 'translateX(-20px)',
-                  transition: 'opacity .55s ease .14s, transform .55s ease .14s',
+                  transition:'opacity .55s ease .14s, transform .6s cubic-bezier(.22,.68,0,1.1) .14s',
                 }}>
                   Comment ça marche ?
                 </h2>
@@ -576,16 +711,17 @@ export default function HomePage() {
             </div>
 
             <div style={{
-              display: 'flex', flexWrap: 'wrap',
+              display:'flex', flexWrap:'wrap',
               gap: isMobile ? '1rem' : '1.5rem',
-              justifyContent: 'center',
-              flex: 1, width: isTablet ? '100%' : 'auto',
+              justifyContent:'center',
+              flex:1, width: isTablet ? '100%' : 'auto',
             }}>
               <StepCard n={1} img="/images/Accueil/img_08.png" label="Récupère ton ticket" visible={stepsVis} delay={0.28} isMobile={isMobile} />
               <StepCard n={2} img="/images/Accueil/img_07.png" label="Saisis ton code"      visible={stepsVis} delay={0.44} isMobile={isMobile} />
               <StepCard n={3} img="/images/Accueil/img_04.png" label="Découvre ton lot"     visible={stepsVis} delay={0.60} isMobile={isMobile} />
             </div>
           </div>
+
         </section>
       </div>
     </Layout>
