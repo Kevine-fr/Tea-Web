@@ -3,21 +3,12 @@ import { authApi } from '../../api/auth.js'
 
 const Ctx = createContext(null)
 
-/**
- * Normalise le rôle.
- * L'API retourne maintenant 'role' comme string directe (ex: "admin")
- * et non plus un objet { id, name }.
- * On accepte les deux formats pour rester robuste.
- */
 function normalizeRole(raw) {
   if (!raw) return null
-  // Si c'est encore un objet { name: '...' } (ancien format) → extraire le name
   if (typeof raw === 'object' && raw !== null) return String(raw.name ?? '').toLowerCase().trim()
-  // Sinon c'est déjà une string
   return String(raw).toLowerCase().trim()
 }
 
-/** Normalise un objet user reçu de l'API */
 function normalizeUser(u) {
   if (!u) return null
   return { ...u, role: normalizeRole(u.role) }
@@ -32,13 +23,11 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem('ttt_token')
     if (!token) { setLoading(false); return }
 
-    // Pré-remplir depuis le cache (affichage rapide)
     const cached = localStorage.getItem('ttt_user')
     if (cached) {
       try { setUser(normalizeUser(JSON.parse(cached))) } catch {}
     }
 
-    // Vérifier avec le serveur pour avoir les données fraîches
     authApi.me()
       .then((u) => {
         const normalized = normalizeUser(u)
@@ -53,10 +42,9 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false))
   }, [])
 
-  /* ── Login ─────────────────────────────────────────────── */
+  /* ── Login email/password ──────────────────────────────── */
   const login = useCallback(async (creds) => {
-    const data = await authApi.login(creds)
-
+    const data     = await authApi.login(creds)
     const rawUser  = data?.user  ?? data
     const rawToken = data?.token ?? data?.access_token
 
@@ -64,7 +52,6 @@ export function AuthProvider({ children }) {
 
     localStorage.setItem('ttt_token', rawToken)
 
-    // Appel /me pour garantir que le rôle est bien chargé
     let normalized
     try {
       const fresh = await authApi.me()
@@ -76,6 +63,21 @@ export function AuthProvider({ children }) {
     localStorage.setItem('ttt_user', JSON.stringify(normalized))
     setUser(normalized)
     return normalized
+  }, [])
+
+  /* ── Login via token OAuth (callback Google) ───────────── */
+  const loginWithToken = useCallback(async (token) => {
+    localStorage.setItem('ttt_token', token)
+    try {
+      const fresh      = await authApi.me()
+      const normalized = normalizeUser(fresh)
+      localStorage.setItem('ttt_user', JSON.stringify(normalized))
+      setUser(normalized)
+      return normalized
+    } catch {
+      localStorage.removeItem('ttt_token')
+      throw new Error('Impossible de récupérer le profil utilisateur.')
+    }
   }, [])
 
   /* ── Register ──────────────────────────────────────────── */
@@ -101,13 +103,12 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
-  // user.role est normalisé en minuscule : "admin" | "employee" | "user" | null
   const isAdmin    = user?.role === 'admin'
   const isEmployee = user?.role === 'employee' || user?.role === 'admin'
   const isUser     = !!user
 
   return (
-    <Ctx.Provider value={{ user, loading, login, register, logout, isAdmin, isEmployee, isUser }}>
+    <Ctx.Provider value={{ user, loading, login, loginWithToken, register, logout, isAdmin, isEmployee, isUser }}>
       {children}
     </Ctx.Provider>
   )

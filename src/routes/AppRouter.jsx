@@ -15,6 +15,7 @@ import DashboardPage from '../views/pages/DashboardPage.jsx'
 import GainsPage     from '../views/pages/GainsPage.jsx'
 import ProfilePage   from '../views/pages/ProfilePage.jsx'
 import AdminPage     from '../views/pages/AdminPage.jsx'
+import AuthCallbackPage from '../views/pages/AuthCallbackPage.jsx'
 
 export default function AppRouter() {
   const { user } = useAuth()
@@ -66,6 +67,8 @@ export default function AppRouter() {
           </RoleRoute>
         }
       />
+
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
       {/* ── 404 ────────────────────────────────────────── */}
       <Route path="*" element={<NotFoundPage />} />

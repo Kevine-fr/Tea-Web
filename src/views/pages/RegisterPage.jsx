@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
 import toast from 'react-hot-toast'
+import { authApi } from '../../api/auth.js'
 
 /* ─── Particules & Sparkles ───────────────────────────────── */
 const PARTICLES = Array.from({ length: 16 }, (_, i) => ({
@@ -524,8 +525,12 @@ export default function RegisterPage() {
                 color:'var(--text-muted)', fontSize:'0.82rem',
               }}>— ou —</div>
 
-              <button type="button" className="btn btn-outline reg-btn-social"
-                style={{ width:'100%', marginBottom:'0.6rem', fontSize:'0.88rem', gap:'0.6rem' }}>
+              <button
+                type="button"
+                className="btn btn-outline login-btn-social"   // ou reg-btn-social
+                style={{ width:'100%', marginBottom:'0.6rem', fontSize:'0.88rem', gap:'0.6rem' }}
+                onClick={() => { window.location.href = authApi.googleRedirectUrl() }}
+              >
                 <img src="https://www.google.com/favicon.ico" alt="" style={{ width:16, height:16 }} />
                 S'inscrire avec Google
               </button>
