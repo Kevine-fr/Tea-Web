@@ -374,7 +374,7 @@ export default function ProfilePage() {
                 <Field label="Prénom"        name="first_name" value={info.first_name} onChange={onInfoChange} error={infoErr.first_name} disabled={infoSaving} />
                 <Field label="Nom"           name="last_name"  value={info.last_name}  onChange={onInfoChange} error={infoErr.last_name}  disabled={infoSaving} />
                 <Field label="Adresse e-mail" name="email"     type="email" value={info.email} onChange={onInfoChange} error={infoErr.email} disabled={infoSaving} full />
-                <Field label="Date de naissance" name="birth_date" type="date" value={info.birth_date} onChange={onInfoChange} error={infoErr.birth_date} disabled={infoSaving} hint="Facultatif" />
+                {/* <Field label="Date de naissance" name="birth_date" type="date" value={info.birth_date} onChange={onInfoChange} error={infoErr.birth_date} disabled={infoSaving} hint="Facultatif" /> */}
               </div>
               <div style={{ display:'flex', justifyContent:'flex-end' }}>
                 <button type="submit" className="prof-btn-save" disabled={infoSaving}>

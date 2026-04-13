@@ -1,11 +1,13 @@
+// ═══════════════════════════════════════════════════════════════════
 // src/views/admin/AdminTicketsTab.jsx
+// ═══════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
 import { adminApi } from '../../api/admin.js'
 import AdminModal from './AdminModal.jsx'
 import { SklTable, SklKpis } from './AdminSkeleton.jsx'
 import toast from 'react-hot-toast'
 
-const CSS = `
+const CSS_TICKETS = `
 .tkt-section-title { font-family:'Playfair Display',Georgia,serif; font-size:1.15rem; font-weight:700; color:var(--green-dark); margin:0; }
 .tkt-kpi { background:#fff; border-radius:var(--radius-sm); border:1px solid var(--cream-border); padding:1rem 1.25rem; }
 .tkt-kpi-val { font-family:'Playfair Display',Georgia,serif; font-size:1.6rem; font-weight:700; }
@@ -15,7 +17,22 @@ const CSS = `
 .tkt-fbtn:hover:not(.active) { background:var(--cream); }
 `
 
-export default function AdminTicketsTab({ search = '' }) {
+function PaginationT({ meta, page, onPage }) {
+  if (!meta?.last_page || meta.last_page <= 1) return null
+  return (
+    <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:'.5rem', marginTop:'1rem', flexWrap:'wrap' }}>
+      <button className="btn btn-outline" style={{ padding:'.3rem .9rem', fontSize:'.8rem', opacity:page<=1?.4:1 }}
+        disabled={page<=1} onClick={() => onPage(page-1)}>← Préc.</button>
+      <span style={{ padding:'.3rem .9rem', fontSize:'.85rem', color:'var(--text-muted)', minWidth:80, textAlign:'center' }}>
+        {meta.current_page} / {meta.last_page}
+      </span>
+      <button className="btn btn-outline" style={{ padding:'.3rem .9rem', fontSize:'.8rem', opacity:page>=meta.last_page?.4:1 }}
+        disabled={page>=meta.last_page} onClick={() => onPage(page+1)}>Suiv. →</button>
+    </div>
+  )
+}
+
+export function AdminTicketsTab({ search = '', refreshKey }) {
   const [stats, setStats]     = useState(null)
   const [tickets, setTickets] = useState([])
   const [meta, setMeta]       = useState({})
@@ -37,7 +54,7 @@ export default function AdminTicketsTab({ search = '' }) {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { load(1, filter) }, [search, filter])
+  useEffect(() => { setPage(1); load(1, filter) }, [search, filter, refreshKey])
 
   async function handleGenerate(vals) {
     const qty = parseInt(vals.quantity, 10)
@@ -59,6 +76,8 @@ export default function AdminTicketsTab({ search = '' }) {
     catch (err) { toast.error(err.response?.data?.message || 'Erreur.') }
   }
 
+  function goPage(p) { setPage(p); load(p) }
+
   const FILTERS = [
     { key:'all',       label:'Tous' },
     { key:'available', label:'Disponibles' },
@@ -67,10 +86,8 @@ export default function AdminTicketsTab({ search = '' }) {
 
   return (
     <>
-      <style>{CSS}</style>
+      <style>{CSS_TICKETS}</style>
       <div style={{ padding:'1.75rem' }}>
-
-        {/* Header */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.25rem', flexWrap:'wrap', gap:'.75rem' }}>
           <h2 className="tkt-section-title">Gestion des tickets</h2>
           <button className="btn btn-orange" style={{ fontSize:'.85rem' }} onClick={() => setModal('generate')}>
@@ -78,15 +95,13 @@ export default function AdminTicketsTab({ search = '' }) {
           </button>
         </div>
 
-        {/* Stats KPI */}
         {loading
           ? <SklKpis count={3} />
-          : (
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'.75rem', marginBottom:'1.25rem' }}>
+          : <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'.75rem', marginBottom:'1.25rem' }}>
               {[
-                { label:'Total',      val:stats?.total,     color:'var(--green-dark)' },
-                { label:'Disponibles',val:stats?.available, color:'var(--green-light)' },
-                { label:'Utilisés',   val:stats?.used,      color:'var(--orange)' },
+                { label:'Total',       val:stats?.total,     color:'var(--green-dark)' },
+                { label:'Disponibles', val:stats?.available, color:'var(--green-light)' },
+                { label:'Utilisés',    val:stats?.used,      color:'var(--orange)' },
               ].map(({ label, val, color }) => (
                 <div key={label} className="tkt-kpi">
                   <div className="tkt-kpi-val" style={{ color }}>{val ?? '—'}</div>
@@ -94,16 +109,12 @@ export default function AdminTicketsTab({ search = '' }) {
                 </div>
               ))}
             </div>
-          )
         }
 
-        {/* Filtres */}
         <div style={{ display:'flex', gap:'.5rem', marginBottom:'1rem', flexWrap:'wrap' }}>
           {FILTERS.map(f => (
             <button key={f.key} className={`tkt-fbtn ${filter===f.key?'active':''}`}
-              onClick={() => { setFilter(f.key); setPage(1) }}>
-              {f.label}
-            </button>
+              onClick={() => { setFilter(f.key); setPage(1) }}>{f.label}</button>
           ))}
         </div>
 
@@ -111,8 +122,7 @@ export default function AdminTicketsTab({ search = '' }) {
           ? <SklTable cols={4} rows={8} headers={['Code','Statut','Créé le','Actions']} />
           : tickets.length === 0
             ? <div style={{ textAlign:'center', padding:'3.5rem', color:'var(--text-muted)' }}>Aucun ticket trouvé.</div>
-            : (
-              <div className="card" style={{ overflow:'auto' }}>
+            : <div className="card" style={{ overflow:'auto' }}>
                 <table className="tbl">
                   <thead><tr><th>Code</th><th>Statut</th><th>Créé le</th><th>Actions</th></tr></thead>
                   <tbody>
@@ -128,17 +138,12 @@ export default function AdminTicketsTab({ search = '' }) {
                             {t.is_used && (
                               <button className="btn btn-outline"
                                 style={{ padding:'.25rem .7rem', fontSize:'.75rem' }}
-                                onClick={() => setModal({ type:'reset', ticket:t })}>
-                                ↺ Reset
-                              </button>
+                                onClick={() => setModal({ type:'reset', ticket:t })}>↺ Reset</button>
                             )}
                             {!t.is_used && (
                               <button className="btn btn-outline"
                                 style={{ padding:'.25rem .65rem', fontSize:'.78rem', color:'var(--error)', borderColor:'var(--error)' }}
-                                title="Supprimer ce ticket"
-                                onClick={() => setModal({ type:'delete', ticket:t })}>
-                                🗑
-                              </button>
+                                onClick={() => setModal({ type:'delete', ticket:t })}>🗑</button>
                             )}
                           </div>
                         </td>
@@ -147,17 +152,9 @@ export default function AdminTicketsTab({ search = '' }) {
                   </tbody>
                 </table>
               </div>
-            )
         }
 
-        {/* Pagination */}
-        {meta.last_page > 1 && (
-          <div style={{ display:'flex', justifyContent:'center', gap:'.5rem', marginTop:'1rem', flexWrap:'wrap' }}>
-            {page > 1 && <button className="btn btn-outline" style={{ padding:'.3rem .9rem', fontSize:'.8rem' }} onClick={() => { const p=page-1; setPage(p); load(p) }}>← Préc.</button>}
-            <span style={{ padding:'.3rem .9rem', fontSize:'.85rem', color:'var(--text-muted)' }}>{meta.current_page} / {meta.last_page}</span>
-            {page < meta.last_page && <button className="btn btn-outline" style={{ padding:'.3rem .9rem', fontSize:'.8rem' }} onClick={() => { const p=page+1; setPage(p); load(p) }}>Suiv. →</button>}
-          </div>
-        )}
+        <PaginationT meta={meta} page={page} onPage={goPage} />
       </div>
 
       {modal === 'generate' && (
@@ -184,3 +181,5 @@ export default function AdminTicketsTab({ search = '' }) {
     </>
   )
 }
+
+export default AdminTicketsTab

@@ -1,11 +1,13 @@
+// ═══════════════════════════════════════════════════════════════════
 // src/views/admin/AdminPrizesTab.jsx
+// ═══════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
 import { adminApi } from '../../api/admin.js'
 import AdminModal from './AdminModal.jsx'
 import { SklCards } from './AdminSkeleton.jsx'
 import toast from 'react-hot-toast'
 
-const CSS = `
+const CSS_PRIZES = `
 @keyframes prizeIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
 .prize-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:1rem; }
 .prize-card {
@@ -23,7 +25,7 @@ const CSS = `
 .prize-section-title { font-family:'Playfair Display',Georgia,serif; font-size:1.15rem; font-weight:700; color:var(--green-dark); margin:0; }
 `
 
-export default function AdminPrizesTab({ userRole = 'admin' }) {
+export function AdminPrizesTab({ userRole = 'admin', refreshKey }) {
   const [prizes, setPrizes]   = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal]     = useState(null)
@@ -31,14 +33,12 @@ export default function AdminPrizesTab({ userRole = 'admin' }) {
 
   async function load() {
     setLoading(true)
-    try {
-      const res = await adminApi.prizes()
-      setPrizes(res.data ?? [])
-    } catch { toast.error('Impossible de charger les lots.') }
+    try { const res = await adminApi.prizes(); setPrizes(res.data ?? []) }
+    catch { toast.error('Impossible de charger les lots.') }
     finally { setLoading(false) }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [refreshKey])
 
   async function handleCreate(vals) {
     try {
@@ -62,19 +62,16 @@ export default function AdminPrizesTab({ userRole = 'admin' }) {
   }
 
   async function handleDelete() {
-    try {
-      await adminApi.deletePrize(modal.prize.id)
-      toast.success('Lot supprimé.'); setModal(null); load()
-    } catch (err) { toast.error(err.response?.data?.message || 'Erreur — ce lot est peut-être lié à des participations.') }
+    try { await adminApi.deletePrize(modal.prize.id); toast.success('Lot supprimé.'); setModal(null); load() }
+    catch (err) { toast.error(err.response?.data?.message || 'Erreur — ce lot est peut-être lié à des participations.') }
   }
 
   const maxStock = Math.max(...prizes.map(p => p.stock), 1)
 
   return (
     <>
-      <style>{CSS}</style>
+      <style>{CSS_PRIZES}</style>
       <div style={{ padding:'1.75rem' }}>
-
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.5rem', flexWrap:'wrap', gap:'.75rem' }}>
           <h2 className="prize-section-title">Lots à gagner</h2>
           {isAdmin && (
@@ -88,16 +85,14 @@ export default function AdminPrizesTab({ userRole = 'admin' }) {
           ? <SklCards count={6} />
           : prizes.length === 0
             ? <div style={{ textAlign:'center', padding:'3.5rem', color:'var(--text-muted)' }}>Aucun lot configuré.</div>
-            : (
-              <div className="prize-grid">
+            : <div className="prize-grid">
                 {prizes.map((p,i) => {
-                  const stockPct   = Math.max((p.stock / maxStock) * 100, 2)
-                  const stockColor = p.stock === 0 ? 'var(--error)' : p.stock < 10 ? 'var(--orange)' : 'var(--green-light)'
+                  const stockPct   = Math.max((p.stock/maxStock)*100,2)
+                  const stockColor = p.stock===0?'var(--error)':p.stock<10?'var(--orange)':'var(--green-light)'
                   return (
                     <div key={p.id} className="prize-card" style={{ animationDelay:`${i*.06}s` }}>
                       <div className="prize-card-name">{p.name}</div>
                       {p.description && <div className="prize-card-desc">{p.description}</div>}
-
                       <div style={{ display:'flex', alignItems:'center', gap:'.75rem' }}>
                         <div className="prize-bar" style={{ flex:1 }}>
                           <div className="prize-bar-fill" style={{ width:`${stockPct}%`, background:stockColor }} />
@@ -106,29 +101,17 @@ export default function AdminPrizesTab({ userRole = 'admin' }) {
                           {p.stock} en stock
                         </span>
                       </div>
-                      {p.stock === 0 && (
-                        <span style={{ fontSize:'.72rem', color:'var(--error)', fontWeight:700 }}>RUPTURE DE STOCK</span>
-                      )}
-
+                      {p.stock === 0 && <span style={{ fontSize:'.72rem', color:'var(--error)', fontWeight:700 }}>RUPTURE DE STOCK</span>}
                       <div className="prize-card-actions">
-                        <button className="btn btn-outline"
-                          style={{ padding:'.25rem .8rem', fontSize:'.78rem' }}
-                          onClick={() => setModal({ type:'stock', prize:p })}>
-                          Stock
-                        </button>
+                        <button className="btn btn-outline" style={{ padding:'.25rem .8rem', fontSize:'.78rem' }}
+                          onClick={() => setModal({ type:'stock', prize:p })}>Stock</button>
                         {isAdmin && (
                           <>
-                            <button className="btn btn-orange"
-                              style={{ padding:'.25rem .8rem', fontSize:'.78rem' }}
-                              onClick={() => setModal({ type:'edit', prize:p })}>
-                              Modifier
-                            </button>
+                            <button className="btn btn-orange" style={{ padding:'.25rem .8rem', fontSize:'.78rem' }}
+                              onClick={() => setModal({ type:'edit', prize:p })}>Modifier</button>
                             <button className="btn btn-outline"
                               style={{ padding:'.25rem .65rem', fontSize:'.78rem', color:'var(--error)', borderColor:'var(--error)' }}
-                              title="Supprimer ce lot"
-                              onClick={() => setModal({ type:'delete', prize:p })}>
-                              🗑
-                            </button>
+                              onClick={() => setModal({ type:'delete', prize:p })}>🗑</button>
                           </>
                         )}
                       </div>
@@ -136,7 +119,6 @@ export default function AdminPrizesTab({ userRole = 'admin' }) {
                   )
                 })}
               </div>
-            )
         }
       </div>
 
@@ -174,3 +156,5 @@ export default function AdminPrizesTab({ userRole = 'admin' }) {
     </>
   )
 }
+
+export default AdminPrizesTab

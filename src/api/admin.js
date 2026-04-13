@@ -49,4 +49,6 @@ export const adminApi = {
 
   // ── Newsletter ──────────────────────────────────────────────
   sendNewsletter: () => post('admin/newsletter', {}),
+  assignAnnualTea: () => post('admin/participations/assign-annual-tea', {}).then(r => r.data ?? r),
+
 }
