@@ -140,7 +140,9 @@ pipeline {
 
           def fullTag = "${envPrefix}-v${newVersion}"
           echo "Tag : ${env.DOCKER_IMAGE}:${fullTag}"
-          sh "docker build -f Dockerfile.prod -t ${env.DOCKER_IMAGE}:${fullTag} ."
+          def viteApiUrl  = (branch == 'main') ? 'https://api-tea-main.wk-archi-o22a-15m-g1.fr' : 'https://api-tea-staging.wk-archi-o22a-15m-g1.fr'
+          def viteSiteUrl = 'wk-archi-o22a-15m-g1.fr'
+          sh "docker build -f Dockerfile.prod --build-arg VITE_API_URL=${viteApiUrl} --build-arg VITE_SITE_URL=${viteSiteUrl} -t ${env.DOCKER_IMAGE}:${fullTag} ." 
           env.DOCKER_FULL_TAG = fullTag
           echo "Image construite : ${env.DOCKER_IMAGE}:${fullTag}"
         }
@@ -182,7 +184,7 @@ pipeline {
           def tag    = env.DOCKER_FULL_TAG
 
           if (branch == 'staging' || branch == 'main') {
-            def workflow = (branch == 'staging') ? 'cd-web-staging.yml' : 'cd-web-prod.yml'
+            def workflow = (branch == 'staging') ? 'deploy-staging.yml' : 'deploy.yml'
             def env_name = (branch == 'staging') ? 'Staging' : 'Production'
             echo "Declenchement deploiement web ${env_name} avec image ${tag}..."
             withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
