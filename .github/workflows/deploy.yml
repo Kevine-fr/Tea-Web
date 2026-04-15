@@ -33,6 +33,7 @@ jobs:
             cat > .env << 'EOF'
             VITE_API_URL=https://api-tea-main.wk-archi-o22a-15m-g1.fr
             VITE_SITE_URL=https://staging.wk-archi-o22a-15m-g1.fr
+            APP_DOMAIN=wk-archi-o22a-15m-g1.fr
             EOF
 
             echo "🐳 Build et démarrage..."
