@@ -38,8 +38,8 @@ jobs:
 
           echo "Generation du .env..."
           cat > .env << 'ENVEOF'
-IMAGE_TAG=${IMAGE_TAG}
-ENVEOF
+          IMAGE_TAG=${IMAGE_TAG}
+          ENVEOF
 
           echo "Pull image : zstin4/tea-web:${IMAGE_TAG}"
           docker pull zstin4/tea-web:${IMAGE_TAG}
