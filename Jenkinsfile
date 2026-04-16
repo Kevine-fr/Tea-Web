@@ -10,7 +10,7 @@ pipeline {
     DOCKER_IMAGE = 'zstin4/tea-web'
     NOTIFY_EMAIL = credentials('email')
   }
-
+ 
   stages {
 
     // ══════════════════════════════════════════════════════════
