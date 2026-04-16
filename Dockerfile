@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Outils utiles
-RUN apk add --no-cache bash git
+RUN apk add --no-cache bash git curl
 
 # On expose le port Vite
 EXPOSE 5173
