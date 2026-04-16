@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import toast from 'react-hot-toast'
 
 const STYLES = `
+  /* ── Keyframes d'entrée ── */
   @keyframes navbarSlideDown {
     from { opacity: 0; transform: translateY(-100%); }
     to   { opacity: 1; transform: translateY(0); }
@@ -24,67 +25,112 @@ const STYLES = `
     from { opacity: 0; transform: translateY(-8px) scale(.97); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
+
+  /* ── Animations au repos (idle) ── */
+
+  /* Logo : flottement doux */
   @keyframes logoFloat {
     0%, 100% { transform: translateY(0px) scale(1); }
     40%       { transform: translateY(-3px) scale(1.012); }
     70%       { transform: translateY(-1.5px) scale(1.006); }
   }
+  /* Logo hover */
   @keyframes logoBreath {
     0%, 100% { transform: scale(1); }
     50%       { transform: scale(1.06); }
   }
+
+  /* Barre de nav : shimmer border-bottom */
   @keyframes navShimmer {
     0%   { background-position: -400px 0; }
     100% { background-position: 400px 0; }
   }
+
+  /* Liens nav : micro-bounce subtil */
   @keyframes linkIdle {
     0%, 100% { transform: translateY(0); }
     50%       { transform: translateY(-1.5px); }
   }
+
+  /* Bouton user : halo pulsé */
   @keyframes userBtnPulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(26,60,46,0); }
     50%       { box-shadow: 0 0 0 5px rgba(26,60,46,0.07); }
   }
+
+  /* Burger : oscillation douce */
   @keyframes burgerWiggle {
     0%, 85%, 100% { transform: rotate(0deg); }
     90%            { transform: rotate(6deg); }
     95%            { transform: rotate(-4deg); }
   }
+
+  /* Chevron : respiration */
   @keyframes chevronBreathe {
     0%, 100% { opacity: 1; }
     50%       { opacity: .45; }
   }
+
+  /* Icône user : rotation lente */
   @keyframes userIconSpin {
     0%   { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+
+  /* Drawer : items ondulation décalée */
   @keyframes drawerItemFloat {
     0%, 100% { transform: translateX(0); }
     50%       { transform: translateX(3px); }
   }
 
-  .navbar-bar { animation: navbarSlideDown .45s cubic-bezier(.22,.68,0,1.1) both; }
+  /* ── Application des idle ── */
+  .navbar-bar {
+    animation: navbarSlideDown .45s cubic-bezier(.22,.68,0,1.1) both;
+  }
+  /* Shimmer sur le border-bottom */
   .navbar-bar::after {
-    content: ''; display: block; height: 1.5px;
-    background: linear-gradient(90deg, transparent 0%, rgba(26,60,46,.18) 30%, rgba(26,60,46,.38) 50%, rgba(26,60,46,.18) 70%, transparent 100%);
+    content: '';
+    display: block;
+    height: 1.5px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(26,60,46,.18) 30%,
+      rgba(26,60,46,.38) 50%,
+      rgba(26,60,46,.18) 70%,
+      transparent 100%
+    );
     background-size: 400px 100%;
     animation: navShimmer 4s linear infinite;
   }
 
+  /* Logo flottant au repos */
   .navbar-logo img {
-    animation: navLogoIn .5s cubic-bezier(.22,.68,0,1.2) .1s both, logoFloat 4.5s ease-in-out 1s infinite;
+    animation: navLogoIn .5s cubic-bezier(.22,.68,0,1.2) .1s both,
+               logoFloat 4.5s ease-in-out 1s infinite;
     transition: transform .3s ease;
   }
-  .navbar-logo:hover img { animation: logoBreath 2s ease-in-out infinite !important; }
+  .navbar-logo:hover img {
+    animation: logoBreath 2s ease-in-out infinite !important;
+  }
 
+  /* Liens : entrée + micro-bounce décalé */
   .nav-link-item { animation: navLinkIn .4s ease both; }
-  .nav-link-item:nth-child(1) { animation-delay: .08s; }
-  .nav-link-item:nth-child(2) { animation-delay: .14s; }
-  .nav-link-item:nth-child(3) { animation-delay: .20s; }
+  .nav-link-item:nth-child(1) {
+    animation-delay: .08s;
+  }
+  .nav-link-item:nth-child(2) {
+    animation-delay: .14s;
+  }
+  .nav-link-item:nth-child(3) {
+    animation-delay: .20s;
+  }
 
+  /* Idle bounce décalé par lien (après l'entrée) */
   .nav-link-item:nth-child(1) .nav-link-animated { animation: linkIdle 5s ease-in-out 1.5s infinite; }
   .nav-link-item:nth-child(2) .nav-link-animated { animation: linkIdle 5s ease-in-out 2.1s infinite; }
   .nav-link-item:nth-child(3) .nav-link-animated { animation: linkIdle 5s ease-in-out 2.7s infinite; }
+  /* Arrêt sur hover */
   .nav-link-item .nav-link-animated:hover { animation: none !important; }
 
   .nav-link-animated { position: relative; display: inline-block; }
@@ -96,6 +142,7 @@ const STYLES = `
   }
   .nav-link-animated:not([data-active="true"]):hover::after { width: 100%; }
 
+  /* ── Bouton user ── */
   .nav-user-btn {
     display: flex; align-items: center; gap: .45rem;
     padding: .32rem .75rem .32rem .42rem;
@@ -104,52 +151,81 @@ const STYLES = `
     background: #fff; cursor: pointer;
     transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
     font-family: var(--font-body); font-size: .88rem; font-weight: 500;
-    color: var(--text-dark, #2a2a2a); white-space: nowrap;
+    color: var(--text-dark, #2a2a2a);
+    white-space: nowrap;
     animation: userBtnPulse 3.5s ease-in-out 2s infinite;
   }
   .nav-user-btn:hover, .nav-user-btn.open {
     border-color: var(--green-dark, #1a3c2e);
     box-shadow: 0 2px 12px rgba(26,60,46,.1);
-    background: var(--cream, #faf7f2); animation: none;
+    background: var(--cream, #faf7f2);
+    animation: none;
   }
+
   .nav-user-icon {
     width: 26px; height: 26px; border-radius: 50%;
     background: linear-gradient(135deg, var(--green-dark, #1a3c2e), #3a7c5e);
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
   }
-  .nav-user-icon svg { animation: userIconSpin 12s linear infinite; }
-  .nav-user-btn:hover .nav-user-icon svg, .nav-user-btn.open .nav-user-icon svg { animation: none; }
+  /* Rotation lente de l'icône personne au repos */
+  .nav-user-icon svg {
+    animation: userIconSpin 12s linear infinite;
+  }
+  .nav-user-btn:hover .nav-user-icon svg,
+  .nav-user-btn.open  .nav-user-icon svg {
+    animation: none;
+  }
 
   .nav-chevron {
     font-size: .65rem; color: var(--text-muted, #888);
     transition: transform .22s ease;
     animation: chevronBreathe 2.8s ease-in-out 1s infinite;
   }
-  .nav-chevron.open { transform: rotate(180deg); animation: none; }
+  .nav-chevron.open {
+    transform: rotate(180deg);
+    animation: none;
+  }
 
+  /* ── Dropdown ── */
   .nav-dropdown {
     position: absolute; top: calc(100% + 8px); right: 0;
-    min-width: 220px; background: #fff;
+    min-width: 220px;
+    background: #fff;
     border: 1px solid var(--cream-border, #e4d9cc);
-    border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.12);
-    overflow: hidden; z-index: 500;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.12);
+    overflow: hidden;
+    z-index: 500;
     animation: dropdownIn .22s cubic-bezier(.34,1.56,.64,1) both;
   }
-  .nav-dd-header { padding: .85rem 1.1rem .7rem; border-bottom: 1px solid var(--cream-border, #e4d9cc); background: var(--cream, #faf7f2); }
+  .nav-dd-header {
+    padding: .85rem 1.1rem .7rem;
+    border-bottom: 1px solid var(--cream-border, #e4d9cc);
+    background: var(--cream, #faf7f2);
+  }
   .nav-dd-name  { font-size: .88rem; font-weight: 700; color: var(--green-dark, #1a3c2e); margin: 0; }
   .nav-dd-email { font-size: .72rem; color: var(--text-muted, #888); margin: 0; }
+
   .nav-dd-item {
-    display: flex; align-items: center; gap: .75rem; padding: .7rem 1.1rem;
-    font-size: .88rem; font-weight: 500; color: var(--text-dark, #2a2a2a);
+    display: flex; align-items: center; gap: .75rem;
+    padding: .7rem 1.1rem;
+    font-size: .88rem; font-weight: 500;
+    color: var(--text-dark, #2a2a2a);
     text-decoration: none; cursor: pointer;
     transition: background .18s ease, color .18s ease;
-    border: none; background: none; width: 100%; text-align: left; font-family: var(--font-body);
+    border: none; background: none; width: 100%; text-align: left;
+    font-family: var(--font-body);
   }
   .nav-dd-item:hover { background: var(--cream, #faf7f2); color: var(--green-dark, #1a3c2e); }
+  .nav-dd-item.active { color: var(--green-dark, #1a3c2e); font-weight: 700; }
+
   .nav-dd-icon {
     width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 15px;
-    background: var(--cream, #faf7f2); transition: background .18s ease;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    background: var(--cream, #faf7f2);
+    transition: background .18s ease;
   }
   .nav-dd-item:hover .nav-dd-icon { background: #fff; }
   .nav-dd-sep { height: 1px; background: var(--cream-border, #e4d9cc); margin: .3rem 0; }
@@ -157,52 +233,47 @@ const STYLES = `
   .nav-dd-logout .nav-dd-icon { background: #fef2f2; }
   .nav-dd-logout:hover { background: #fef2f2 !important; }
 
-  .burger-btn { transition: color .2s ease; animation: burgerWiggle 6s ease-in-out 3s infinite; }
-  .burger-btn:hover { animation: none; transform: scale(1.15); }
+  /* ── Burger ── */
+  .burger-btn {
+    transition: color .2s ease;
+    animation: burgerWiggle 6s ease-in-out 3s infinite;
+  }
+  .burger-btn:hover {
+    animation: none;
+    transform: scale(1.15);
+  }
 
+  /* ── Drawer mobile : items flottants décalés ── */
   .navbar-drawer { animation: drawerSlideDown .3s ease both; }
   .drawer-link-idle-1 { animation: drawerItemFloat 4s ease-in-out 0.5s infinite; }
   .drawer-link-idle-2 { animation: drawerItemFloat 4s ease-in-out 1.0s infinite; }
   .drawer-link-idle-3 { animation: drawerItemFloat 4s ease-in-out 1.5s infinite; }
   .drawer-link-idle-4 { animation: drawerItemFloat 4s ease-in-out 2.0s infinite; }
 
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT PRINCIPAL — grid 3 colonnes garantit le centrage
-     du logo quels que soient les éléments gauche/droite
-  ══════════════════════════════════════════════════════════ */
-  .navbar-inner {
-    display: grid !important;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-  }
-  /* Liens étalés uniformément dans chaque colonne */
-  .nav-links-left  { display: flex; align-items: center; justify-content: space-evenly; width: 100%; }
-  .nav-links-right { display: flex; align-items: center; justify-content: space-evenly; width: 100%; }
-
-  /* Tablette */
-  @media (max-width: 1100px) {
-    .navbar-inner { padding: 0 1.5rem !important; }
-  }
-
-  /* Mobile : burger */
+  /* ── Responsive ── */
   .hide-mobile { display: flex !important; }
   .burger-btn  { display: none !important; }
 
+  @media (max-width: 1100px) {
+    .navbar-inner    { padding: 0 2rem !important; }
+    .nav-links-left  { gap: 2rem !important; }
+    .nav-links-right { gap: 2rem !important; }
+  }
+
+  /* Tablette & mobile : logo centré */
   @media (max-width: 768px) {
-    .hide-mobile { display: none !important; }
-    .burger-btn  { display: flex !important; align-items: center; justify-content: center; }
-    /* Sur mobile : on repasse en flex normal, logo centré par position absolute */
-    .navbar-inner {
-      display: flex !important;
-      justify-content: space-between;
-      position: relative;
-    }
+    .hide-mobile  { display: none !important; }
+    .burger-btn   { display: flex !important; align-items: center; justify-content: center; }
+    .navbar-inner { padding: 0 1.25rem !important; position: relative; }
+
+    /* Logo centré absolument */
     .navbar-logo {
       position: absolute !important;
       left: 50% !important;
       transform: translateX(-50%) !important;
       margin: 0 !important;
     }
+    /* Le burger se positionne à droite grâce au margin-left: auto sur navbar-inner flex */
     .burger-btn { margin-left: auto; }
   }
 `
@@ -273,11 +344,13 @@ export default function Navbar() {
       background: 'var(--cream-light)', borderBottom: '1px solid var(--cream-border)',
       position: 'sticky', top: 0, zIndex: 200, boxShadow: '0 1px 8px rgba(0,0,0,.05)',
     }}>
-      {/* ── grid : [liens gauche] [logo] [liens droite] ── */}
-      <div className="navbar-inner" style={{ margin: '0 auto', padding: '0 4rem', height: 68 }}>
+      <div className="navbar-inner" style={{
+        margin: '0 auto', padding: '0 10.5rem', height: 68,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
 
-        {/* Colonne 1 — Liens gauche */}
-        <div className="nav-links-left hide-mobile">
+        {/* ── Liens gauche ── */}
+        <div className="nav-links-left hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '3rem', flex: 1 }}>
           {[
             { to: '/',      label: 'Accueil' },
             { to: '/jeu',   label: 'Jeu' },
@@ -289,11 +362,9 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Colonne 2 — Logo (centré automatiquement par le grid) */}
-        <Link to="/" className="navbar-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img
-            src="/images/Header/img_01.png"
-            alt="Thé Tip Top"
+        {/* ── Logo centre ── */}
+        <Link to="/" className="navbar-logo" style={{ flexShrink: 0, margin: '0 1.5rem', display: 'flex', alignItems: 'center' }}>
+          <img src="/images/Header/img_01.png" alt="Thé Tip Top"
             style={{ height: 50, width: 'auto' }}
             onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }}
           />
@@ -302,8 +373,8 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Colonne 3 — Liens droite */}
-        <div className="nav-links-right hide-mobile">
+        {/* ── Liens droite ── */}
+        <div className="nav-links-right hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '3rem', flex: 1, justifyContent: 'flex-end' }}>
           {user ? (
             <div ref={ddRef} style={{ position: 'relative' }}>
               <button
@@ -352,28 +423,36 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Burger mobile */}
+        {/* ── Burger — frère direct de navbar-inner ── */}
         <button
           onClick={() => setOpen(!open)}
           aria-label="Menu"
           className="burger-btn"
-          style={{ fontSize: '1.4rem', color: 'var(--green-dark)', padding: '.25rem', background: 'none', border: 'none', cursor: 'pointer' }}
+          style={{
+            fontSize: '1.4rem', color: 'var(--green-dark)',
+            padding: '.25rem', background: 'none',
+            border: 'none', cursor: 'pointer',
+          }}
         >
           {open ? '✕' : '☰'}
         </button>
 
       </div>
 
-      {/* Drawer mobile */}
+      {/* ── Drawer mobile ── */}
       {open && (
-        <div className="navbar-drawer" style={{ background: '#fff', borderTop: '1px solid var(--cream-border)', padding: '1rem 1.5rem 1.5rem', boxShadow: 'var(--shadow-md)' }}>
+        <div className="navbar-drawer" style={{
+          background: '#fff', borderTop: '1px solid var(--cream-border)',
+          padding: '1rem 1.5rem 1.5rem', boxShadow: 'var(--shadow-md)',
+        }}>
           {[
             { to: '/',        label: 'Accueil',  cls: 'drawer-link-idle-1' },
             { to: '/jeu',     label: 'Jeu',      cls: 'drawer-link-idle-2' },
             { to: '/gains',   label: 'Gain',     cls: 'drawer-link-idle-3' },
             { to: '/contact', label: 'Contact',  cls: 'drawer-link-idle-4' },
           ].map(({ to, label, cls }) => (
-            <Link key={to} to={to} onClick={() => setOpen(false)} className={cls}
+            <Link key={to} to={to} onClick={() => setOpen(false)}
+              className={cls}
               style={{ display: 'block', padding: '.75rem 0', borderBottom: '1px solid var(--cream-border)', fontSize: '.95rem', fontWeight: 500, color: 'var(--text-dark)', textDecoration: 'none' }}>
               {label}
             </Link>
@@ -390,6 +469,7 @@ export default function Navbar() {
                   <div style={{ fontSize: '.7rem', color: 'var(--text-muted)' }}>{user.email}</div>
                 </div>
               </div>
+
               {userMenuItems.map(item => (
                 <Link key={item.to} to={item.to} onClick={() => setOpen(false)}
                   style={{ display: 'flex', alignItems: 'center', gap: '.65rem', padding: '.65rem .9rem', borderRadius: 12, border: '1px solid var(--cream-border)', textDecoration: 'none', color: 'var(--text-dark)', fontSize: '.9rem', fontWeight: 500, background: '#fff' }}>
@@ -397,6 +477,7 @@ export default function Navbar() {
                   {item.label}
                 </Link>
               ))}
+
               <button onClick={handleLogout}
                 style={{ display: 'flex', alignItems: 'center', gap: '.65rem', padding: '.65rem .9rem', borderRadius: 12, border: '1px solid #fecaca', background: '#fef2f2', cursor: 'pointer', color: '#dc2626', fontSize: '.9rem', fontWeight: 500, fontFamily: 'var(--font-body)' }}>
                 <span style={{ fontSize: 16 }}>🚪</span>
