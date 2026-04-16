@@ -1,0 +1,33 @@
+name: "[Policy] Jenkins PR Only"
+
+on:
+  pull_request:
+    branches: [staging, main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+jobs:
+  check-label:
+    name: "PR créée par Jenkins uniquement"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier le label jenkins-approved
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          echo "Vérification du label jenkins-approved sur la PR #${PR_NUMBER}..."
+
+          HAS_LABEL=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/labels" \
+            --jq '[.[].name] | contains(["jenkins-approved"])' 2>/dev/null || echo "false")
+
+          if [ "$HAS_LABEL" = "true" ]; then
+            echo "✅ Label jenkins-approved présent — merge autorisé."
+          else
+            echo "::error title=[Policy] PR non autorisée::Cette PR n'a pas été créée par Jenkins CI."
+            echo ""
+            echo "  Les merges vers staging et main sont réservés aux PRs générées automatiquement par Jenkins."
+            echo "  Le label 'jenkins-approved' est absent de cette PR."
+            exit 1
+          fi
