@@ -111,9 +111,15 @@ const STYLES = `
     gap: 1.75rem;
     align-items: stretch;
     margin-bottom: 3.5rem;
+    justify-items: center;
   }
+  /* Ligne 1 : lots 1-3 → 2 colonnes chacun */
   .gain-grid .prize-card-wrapper:nth-child(-n+3) { grid-column: span 2; }
-  .gain-grid .prize-card-wrapper:nth-child(n+4)  { grid-column: span 3; }
+  /* Ligne 2 : lots 4-5 → 3 colonnes chacun */
+  .gain-grid .prize-card-wrapper:nth-child(4),
+  .gain-grid .prize-card-wrapper:nth-child(5)    { grid-column: span 3; }
+  /* Ligne 3 : lot 6 → toute la largeur, centré */
+  .gain-grid .prize-card-wrapper:nth-child(6)    { grid-column: 1 / -1; max-width: 500px; margin: 0 auto; width: 100%; }
 
   .prize-card-wrapper {
     position: relative; padding-top: 58px;
@@ -357,7 +363,7 @@ export default function GainPage() {
   return (
     <Layout>
       <PageBanner title="Lot à gagner" />
-              <CountdownBanner />
+                    <CountdownBanner />
 
       {lightboxIndex !== null && (
         <Lightbox
