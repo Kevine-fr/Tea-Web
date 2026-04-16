@@ -11,7 +11,7 @@ pipeline {
     NOTIFY_EMAIL = credentials('email')
   }
   
-  stages {
+  stages { 
 
     // ══════════════════════════════════════════════════════════
     // 1. BUILD — Récupération du code
