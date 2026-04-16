@@ -80,7 +80,7 @@ const CSS = `
 
   /* ── Mode réduit : pill semi-transparente ── */
   .cd-banner.is-collapsed {
-    opacity: 0.55;
+    opacity: 0.40;
     border-radius: 999px;
     width: fit-content;
   }
@@ -275,7 +275,7 @@ function LeafBurst({ active }) {
 export default function CountdownBanner() {
   const [initialSeconds, setInitialSeconds] = useState(null)
   const [error, setError]                   = useState(false)
-  const [collapsed, setCollapsed]            = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const [burst, setBurst]                    = useState(false)
 
   // Charge la période depuis l'API
