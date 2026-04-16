@@ -6,6 +6,7 @@ import PageBanner from '../components/PageBanner.jsx'
 import SEO from '../components/SEO.jsx'
 import client from '../../api/client.js'
 import toast from 'react-hot-toast'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
   id: i, left: `${5 + (i * 6.5) % 90}%`,
@@ -317,6 +318,7 @@ export default function ContactPage() {
       />
       <style>{CSS}</style>
       <PageBanner title="Contact" />
+              <CountdownBanner />
 
       <section className="contact-section">
         {PARTICLES.map(p => (
