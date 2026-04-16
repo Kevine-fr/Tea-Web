@@ -10,8 +10,8 @@ pipeline {
     DOCKER_IMAGE = 'zstin4/tea-web'
     NOTIFY_EMAIL = credentials('email')
   }
-
-  stages {
+  
+  stages { 
 
     // ══════════════════════════════════════════════════════════
     // 1. BUILD — Récupération du code
@@ -140,7 +140,9 @@ pipeline {
 
           def fullTag = "${envPrefix}-v${newVersion}"
           echo "Tag : ${env.DOCKER_IMAGE}:${fullTag}"
-          sh "docker build -t ${env.DOCKER_IMAGE}:${fullTag} ."
+          def viteApiUrl  = (branch == 'main') ? 'https://api-tea-main.wk-archi-o22a-15m-g1.fr' : 'https://api-tea-staging.wk-archi-o22a-15m-g1.fr'
+          def viteSiteUrl = 'wk-archi-o22a-15m-g1.fr'
+          sh "docker build -f Dockerfile.prod --build-arg VITE_API_URL=${viteApiUrl} --build-arg VITE_SITE_URL=${viteSiteUrl} -t ${env.DOCKER_IMAGE}:${fullTag} ." 
           env.DOCKER_FULL_TAG = fullTag
           echo "Image construite : ${env.DOCKER_IMAGE}:${fullTag}"
         }
@@ -182,7 +184,7 @@ pipeline {
           def tag    = env.DOCKER_FULL_TAG
 
           if (branch == 'staging' || branch == 'main') {
-            def workflow = (branch == 'staging') ? 'cd-web-staging.yml' : 'cd-web-prod.yml'
+            def workflow = (branch == 'staging') ? 'deploy-staging.yml' : 'deploy.yml'
             def env_name = (branch == 'staging') ? 'Staging' : 'Production'
             echo "Declenchement deploiement web ${env_name} avec image ${tag}..."
             withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
@@ -191,7 +193,7 @@ pipeline {
                   -H "Authorization: Bearer \$GH_TOKEN" \
                   -H "Accept: application/vnd.github+json" \
                   -H "Content-Type: application/json" \
-                  "https://api.github.com/repos/Kevine-fr/Tea-Web/actions/workflows/${workflow}/dispatches" \
+                  "https://api.github.com/repos/Kevine-fr/Tea-web/actions/workflows/${workflow}/dispatches" \
                   -d '{"ref":"${branch}","inputs":{"image_tag":"${tag}"}}')
                 echo "HTTP Status: \$HTTP_CODE"
                 cat /tmp/gh_response.txt || true
@@ -229,7 +231,7 @@ pipeline {
               EXISTING=\$(curl -sf \
                 -H "Authorization: Bearer \$GH_TOKEN" \
                 -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/repos/Kevine-fr/Tea-Web/pulls?state=open&base=${base}&head=Kevine-fr:${branch}" \
+                "https://api.github.com/repos/Kevine-fr/Tea-web/pulls?state=open&base=${base}&head=Kevine-fr:${branch}" \
                 | grep -o '"number": *[0-9]*' | head -1 | grep -o '[0-9]*' || echo "")
               if [ -n "\$EXISTING" ]; then
                 echo "PR #\$EXISTING deja ouverte — ajout du label jenkins-approved."
@@ -237,14 +239,14 @@ pipeline {
                   -H "Authorization: Bearer \$GH_TOKEN" \
                   -H "Accept: application/vnd.github+json" \
                   -H "Content-Type: application/json" \
-                  "https://api.github.com/repos/Kevine-fr/Tea-Web/issues/\$EXISTING/labels" \
+                  "https://api.github.com/repos/Kevine-fr/Tea-web/issues/\$EXISTING/labels" \
                   -d '{"labels":["jenkins-approved"]}' || true
               else
                 RESULT=\$(curl -s -X POST \
                   -H "Authorization: Bearer \$GH_TOKEN" \
                   -H "Accept: application/vnd.github+json" \
                   -H "Content-Type: application/json" \
-                  "https://api.github.com/repos/Kevine-fr/Tea-Web/pulls" \
+                  "https://api.github.com/repos/Kevine-fr/Tea-web/pulls" \
                   -d '{"title":"${title}","head":"${branch}","base":"${base}"}')
                 PR_NUM=\$(echo "\$RESULT" | grep -o '"number": *[0-9]*' | head -1 | grep -o '[0-9]*' || echo "")
                 if [ -z "\$PR_NUM" ]; then
@@ -254,7 +256,7 @@ pipeline {
                     -H "Authorization: Bearer \$GH_TOKEN" \
                     -H "Accept: application/vnd.github+json" \
                     -H "Content-Type: application/json" \
-                    "https://api.github.com/repos/Kevine-fr/Tea-Web/issues/\$PR_NUM/labels" \
+                    "https://api.github.com/repos/Kevine-fr/Tea-web/issues/\$PR_NUM/labels" \
                     -d '{"labels":["jenkins-approved"]}' || true
                   echo "PR #\$PR_NUM creee : ${branch} vers ${base}"
                 fi
@@ -278,14 +280,14 @@ pipeline {
           def branch = env.BRANCH_NAME ?: 'N/A'
           mail(
             to:      env.NOTIFY_EMAIL,
-            subject: "✅ [Jenkins] Build SUCCESS — Tea-Web/${branch} #${env.BUILD_NUMBER}",
+            subject: "✅ [Jenkins] Build SUCCESS — Tea-web/${branch} #${env.BUILD_NUMBER}",
             body: """
 Bonjour,
 
 Le build Jenkins du frontend s'est terminé avec succès.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Projet   : Tea-Web (React/Vite)
+  Projet   : Tea-web (React/Vite)
   Branche  : ${branch}
   Build    : #${env.BUILD_NUMBER}
   Image    : zstin4/tea-web:${tag}
@@ -308,14 +310,14 @@ Jenkins CI
           def branch = env.BRANCH_NAME ?: 'N/A'
           mail(
             to:      env.NOTIFY_EMAIL,
-            subject: "❌ [Jenkins] Build FAILURE — Tea-Web/${branch} #${env.BUILD_NUMBER}",
+            subject: "❌ [Jenkins] Build FAILURE — Tea-web/${branch} #${env.BUILD_NUMBER}",
             body: """
 Bonjour,
 
 Le build Jenkins du frontend a échoué.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Projet   : Tea-Web (React/Vite)
+  Projet   : Tea-web (React/Vite)
   Branche  : ${branch}
   Build    : #${env.BUILD_NUMBER}
   Durée    : ${currentBuild.durationString}

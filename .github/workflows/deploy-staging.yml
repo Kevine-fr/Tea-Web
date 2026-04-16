@@ -1,9 +1,11 @@
-name: 🚀 Deploy Frontend Staging to VPS
+name: Deploy Frontend to Staging
 
 on:
-  push:
-    branches: [staging]
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Tag DockerHub (ex: staging-v1.2.3)"
+        required: true
 
 jobs:
   deploy:
@@ -12,42 +14,47 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
-          script: |
-            set -e
-            cd ~/tea-app-web-staging || exit 1
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
 
-            echo "📦 Pull du code..."
-            git pull origin staging
+      - name: Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-            echo "📝 Génération du .env..."
-            cat > .env << 'EOF'
-            VITE_API_URL=https://api-tea-staging.wk-archi-o22a-15m-g1.fr
-            VITE_SITE_URL=https://wk-archi-o22a-15m-g1.fr
-            APP_DOMAIN=wk-archi-o22a-15m-g1.fr
-            EOF
+      - name: Deploy to Staging VPS
+        env:
+          IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash << EOF
+          set -e
+          cd /home/deploy/tea-app-web-staging || exit 1
 
-            echo "🐳 Build et démarrage..."
-            docker compose -f docker-compose.staging.yml up -d --build --remove-orphans
+          echo "Mise a jour du code..."
+          git fetch origin
+          git reset --hard origin/staging
 
-            echo "🔍 Vérification..."
-            timeout 30 bash -c 'until docker ps | grep -q tea_web_staging; do sleep 2; done' \
-              || (echo "❌ Container React staging non démarré" && exit 1)
+          echo "Generation du .env..."
+          cat > .env << 'ENVEOF'
+          IMAGE_TAG=${IMAGE_TAG}
+          ENVEOF
 
-            echo "🧹 Nettoyage images..."
-            docker image prune -f
+          echo "Pull image : zstin4/tea-web:${IMAGE_TAG}"
+          docker pull zstin4/tea-web:${IMAGE_TAG}
 
-            echo "✅ Frontend staging déployé !"
+          echo "Demarrage du container..."
+          IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.staging.yml up -d --remove-orphans --force-recreate
 
-      - name: Notify on failure
-        if: failure()
-        run: echo "❌ Déploiement frontend staging échoué — vérifiez les logs."
+          timeout 30 bash -c 'until docker ps | grep -q tea_web_staging; do sleep 2; done' \
+            || (echo "Container React staging non demarre" && exit 1)
+
+          docker image prune -f
+          echo "Frontend staging deploye : zstin4/tea-web:${IMAGE_TAG}"
+          EOF
+
+      - name: Resume
+        run: |
+          echo "## Staging frontend deploye" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag | \`${{ github.event.inputs.image_tag }}\` |" >> $GITHUB_STEP_SUMMARY
