@@ -21,6 +21,7 @@ pipeline {
         dockerfile {
           filename 'Dockerfile.ci'
           args '--network backend'
+          additionalBuildArgs '--no-cache'
         }
       }
       steps { checkout scm }

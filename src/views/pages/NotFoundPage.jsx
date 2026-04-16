@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import AnimatedLeaves from '../components/AnimatedLeaves.jsx'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 export default function NotFoundPage() {
   return (
@@ -16,6 +17,7 @@ export default function NotFoundPage() {
         overflow: 'hidden',
       }}>
         <AnimatedLeaves />
+        <CountdownBanner />
         <div className="card fade-up" style={{
           padding: 'clamp(1.5rem, 5vw, 3.5rem) clamp(1.25rem, 5vw, 3rem)',
           maxWidth: 620,

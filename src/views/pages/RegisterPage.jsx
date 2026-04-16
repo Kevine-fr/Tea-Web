@@ -6,6 +6,7 @@ import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
 import toast from 'react-hot-toast'
 import { authApi } from '../../api/auth.js'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 /* ─── Particules & Sparkles ───────────────────────────────── */
 const PARTICLES = Array.from({ length: 16 }, (_, i) => ({
@@ -380,6 +381,7 @@ export default function RegisterPage() {
   return (
     <Layout>
       <PageBanner title="Inscription" />
+      <CountdownBanner />
 
       <section
         className="reg-section"
@@ -483,7 +485,12 @@ export default function RegisterPage() {
                     className={`reg-input${errors.password_confirm ? ' is-err' : ''}`}
                     {...register('password_confirm', {
                       required:'Requis',
-                      validate: v => v === password || 'Mots de passe différents',
+                      validate: {
+                        uppercase: v => /[A-Z]/.test(v) || 'Au moins une majuscule.',
+                        lowercase: v => /[a-z]/.test(v) || 'Au moins une minuscule.',
+                        number:    v => /[0-9]/.test(v) || 'Au moins un chiffre.',
+                        special:   v => /[@$!%*?&\-_#]/.test(v) || 'Au moins un caractère spécial.',
+                      },
                     })} />
                   {errors.password_confirm && <p className="err">{errors.password_confirm.message}</p>}
                 </div>

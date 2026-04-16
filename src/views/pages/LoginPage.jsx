@@ -6,6 +6,7 @@ import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
 import toast from 'react-hot-toast'
 import { authApi } from '../../api/auth.js'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 /* ─── Particules & Sparkles ───────────────────────────────── */
 const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
@@ -367,6 +368,7 @@ export default function LoginPage() {
   return (
     <Layout>
       <PageBanner title="Connexion" />
+              <CountdownBanner />
 
       <section
         className="login-section"

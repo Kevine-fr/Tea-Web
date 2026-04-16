@@ -1,9 +1,7 @@
 {
   "name": "Tea-web Dev",
-  "build": {
-    "dockerfile": "../Dockerfile",
-    "context": ".."
-  },
+  "dockerComposeFile": "../docker-compose.dev.yml",
+  "service": "app",
   "workspaceFolder": "/app",
   "forwardPorts": [5173],
   "customizations": {
@@ -14,6 +12,5 @@
       ]
     }
   },
-  "postCreateCommand": "npm create vite@latest . -- --template react && npm install",
-  "remoteUser": "root"
+  "postCreateCommand": "npm install && echo 'Configuration effectuee avec succes ✅'"
 }
