@@ -6,6 +6,7 @@ import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
 import toast from 'react-hot-toast'
 import { authApi } from '../../api/auth.js'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 /* ─── Particules & Sparkles ───────────────────────────────── */
 const PARTICLES = Array.from({ length: 16 }, (_, i) => ({
@@ -380,6 +381,7 @@ export default function RegisterPage() {
   return (
     <Layout>
       <PageBanner title="Inscription" />
+      <CountdownBanner />
 
       <section
         className="reg-section"

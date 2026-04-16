@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 function useReveal(threshold = 0.15) {
   const [vis, setVis] = useState(false)
@@ -356,6 +357,7 @@ export default function GainPage() {
   return (
     <Layout>
       <PageBanner title="Lot à gagner" />
+              <CountdownBanner />
 
       {lightboxIndex !== null && (
         <Lightbox

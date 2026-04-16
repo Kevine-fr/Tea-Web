@@ -5,6 +5,7 @@ import Layout    from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
 import client    from '../../api/client.js'
 import toast     from 'react-hot-toast'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 /* ─── Styles ─────────────────────────────────────────────── */
 const STYLES = `
@@ -340,6 +341,7 @@ export default function ProfilePage() {
   return (
     <Layout>
       <PageBanner title="Mon profil" />
+      <CountdownBanner />
 
       <div className="prof-wrap">
 
