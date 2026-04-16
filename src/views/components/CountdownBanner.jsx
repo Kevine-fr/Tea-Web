@@ -1,14 +1,20 @@
 import { useState, useEffect, useRef } from 'react'
-
-const INITIAL_SECONDS = 2 * 24 * 60 * 60
+import client from '../../api/client.js'
 
 function useCountdown(totalSeconds) {
-  const [remaining, setRemaining] = useState(totalSeconds)
+  const [remaining, setRemaining] = useState(0)
+
+  // Resync quand totalSeconds arrive depuis l'API (passe de 0 à une vraie valeur)
+  useEffect(() => {
+    if (totalSeconds > 0) setRemaining(totalSeconds)
+  }, [totalSeconds])
+
   useEffect(() => {
     if (remaining <= 0) return
     const id = setInterval(() => setRemaining(s => Math.max(0, s - 1)), 1000)
     return () => clearInterval(id)
   }, [remaining])
+
   return {
     days:    Math.floor(remaining / 86400),
     hours:   Math.floor((remaining % 86400) / 3600),
@@ -76,6 +82,7 @@ const CSS = `
   .cd-banner.is-collapsed {
     opacity: 0.55;
     border-radius: 999px;
+    width: fit-content;
   }
   .cd-banner.is-collapsed:hover {
     opacity: 1;
@@ -103,8 +110,13 @@ const CSS = `
     text-align: left;
     color: var(--text-dark, #2a2a2a);
     font-family: inherit;
-    transition: background .18s ease, padding .3s ease;
+    transition: background .18s ease, padding .3s ease, width .35s ease;
     white-space: nowrap;
+  }
+  .cd-banner.is-collapsed .cd-toggle {
+    width: auto;
+    gap: 6px;
+    padding: 8px 12px;
   }
   .cd-toggle:hover { background: rgba(200,114,58,.05); }
 
@@ -123,15 +135,13 @@ const CSS = `
     text-transform: uppercase;
     letter-spacing: .08em;
     color: var(--green-dark, #1a3c2e);
-    flex: 1;
     overflow: hidden;
     max-width: 200px;
-    transition: max-width .35s ease, opacity .3s ease;
+    transition: max-width .35s ease, opacity .3s ease, flex .35s ease;
+    flex: 1;
   }
   .cd-toggle-label.hidden {
-    max-width: 0;
-    opacity: 0;
-    overflow: hidden;
+    display: none;
   }
 
   /* Timer preview dans le toggle */
@@ -262,20 +272,39 @@ function LeafBurst({ active }) {
   )
 }
 
-export default function CountdownBanner({ initialSeconds = INITIAL_SECONDS }) {
-  const [collapsed, setCollapsed] = useState(false)
-  const { days, hours, minutes, seconds, remaining } = useCountdown(initialSeconds)
-  const isUrgent = remaining < 3600
+export default function CountdownBanner() {
+  const [initialSeconds, setInitialSeconds] = useState(null)
+  const [error, setError]                   = useState(false)
+  const [collapsed, setCollapsed]            = useState(false)
+  const [burst, setBurst]                    = useState(false)
+
+  // Charge la période depuis l'API
+  useEffect(() => {
+    client.get('game-period')
+      .then(r => {
+        const data = r.data?.data ?? r.data
+        const secs = data?.remaining_seconds ?? null
+        if (secs !== null && secs > 0) setInitialSeconds(secs)
+        else setError(true)
+      })
+      .catch(() => setError(true))
+  }, [])
+
+  const { days, hours, minutes, seconds, remaining } = useCountdown(initialSeconds ?? 0)
+  const isUrgent = remaining > 0 && remaining < 3600
   const prevSec = useRef(seconds)
-  const [burst, setBurst] = useState(false)
 
   useEffect(() => {
-    if (prevSec.current !== seconds && seconds === 0) {
+    if (prevSec.current !== seconds && seconds === 0 && remaining > 0) {
       setBurst(true)
       setTimeout(() => setBurst(false), 1500)
     }
     prevSec.current = seconds
-  }, [seconds])
+  }, [seconds, remaining])
+
+  // Rien à afficher si pas de période ou période terminée
+  if (error || initialSeconds === null) return null
+  if (remaining <= 0) return null
 
   return (
     <>
