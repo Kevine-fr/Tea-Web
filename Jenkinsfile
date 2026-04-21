@@ -7,8 +7,8 @@ pipeline {
   }
 
   environment {
-    DOCKER_IMAGE = 'zstin4/tea-web'
-    NOTIFY_EMAIL = credentials('email')
+    DOCKER_IMAGE = credentials('docker-image')
+    NOTIFY_EMAIL = credentials('notify-email')
   }
   
   stages { 
