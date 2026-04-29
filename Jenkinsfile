@@ -213,34 +213,34 @@ pipeline {
     // ══════════════════════════════════════════════════════════
     stage('Trigger Deployment') {
       agent any
+      when {
+        not { branch 'dev' }
+      }
       steps {
         script {
           def branch = env.BRANCH_NAME
           def tag    = env.DOCKER_FULL_TAG
 
-          if (branch == 'staging' || branch == 'main') {
-            def workflow = (branch == 'staging') ? 'deploy-staging.yml' : 'deploy.yml'
-            def env_name = (branch == 'staging') ? 'Staging' : 'Production'
-            echo "Declenchement deploiement web ${env_name} avec image ${tag}..."
-            withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
-              sh """
-                HTTP_CODE=\$(curl -s -o /tmp/gh_response.txt -w "%{http_code}" -X POST \
-                  -H "Authorization: Bearer \$GH_TOKEN" \
-                  -H "Accept: application/vnd.github+json" \
-                  -H "Content-Type: application/json" \
-                  "https://api.github.com/repos/Kevine-fr/Tea-web/actions/workflows/${workflow}/dispatches" \
-                  -d '{"ref":"${branch}","inputs":{"image_tag":"${tag}"}}')
-                echo "HTTP Status: \$HTTP_CODE"
-                cat /tmp/gh_response.txt || true
-                if [ "\$HTTP_CODE" = "204" ] || [ "\$HTTP_CODE" = "200" ]; then
-                  echo "Deploiement web ${env_name} declenche avec le tag ${tag}"
-                else
-                  echo "Erreur declenchement (HTTP \$HTTP_CODE) — non bloquant"
-                fi
-              """
-            }
-          } else {
-            echo "Branche ${branch} : pas de deploiement automatique."
+          def workflow = (branch == 'staging') ? 'cd-staging.yml' : 'cd-prod.yml'
+          def env_name = (branch == 'staging') ? 'Staging' : 'Production'
+
+          echo "Declenchement deploiement web ${env_name} avec image ${tag}..."
+          withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
+            sh """
+              HTTP_CODE=\$(curl -s -o /tmp/gh_response.txt -w "%{http_code}" -X POST \
+                -H "Authorization: Bearer \$GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                -H "Content-Type: application/json" \
+                "https://api.github.com/repos/Kevine-fr/Tea-web/actions/workflows/${workflow}/dispatches" \
+                -d '{"ref":"${branch}","inputs":{"image_tag":"${tag}"}}')
+              echo "HTTP Status: \$HTTP_CODE"
+              cat /tmp/gh_response.txt || true
+              if [ "\$HTTP_CODE" = "204" ] || [ "\$HTTP_CODE" = "200" ]; then
+                echo "Deploiement web ${env_name} declenche avec le tag ${tag}"
+              else
+                error "Erreur declenchement (HTTP \$HTTP_CODE)"
+              fi
+            """
           }
         }
       }
