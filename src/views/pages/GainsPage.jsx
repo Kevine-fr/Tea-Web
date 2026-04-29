@@ -154,7 +154,6 @@ export default function GainsPage() {
                   <tr>
                     <th>N° Ticket</th>
                     <th>Lot</th>
-                    <th>Date limite</th>
                     <th>Statut</th>
                   </tr>
                 </thead>
@@ -174,9 +173,6 @@ export default function GainsPage() {
                       >
                         <td className="gains-code">{code}</td>
                         <td style={{ fontWeight: 600 }}>{prizeName}</td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                          {deadline(dateRef)}
-                        </td>
                         <td>
                           <span
                             className={`status gains-badge ${s.cls}`}
