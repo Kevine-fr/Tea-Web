@@ -231,7 +231,7 @@ pipeline {
                 -H "Authorization: Bearer \$GH_TOKEN" \
                 -H "Accept: application/vnd.github+json" \
                 -H "Content-Type: application/json" \
-                "https://api.github.com/repos/Kevine-fr/Tea-web/actions/workflows/${workflow}/dispatches" \
+                "https://api.github.com/repos/Kevine-fr/Tea-Web/actions/workflows/${workflow}/dispatches" \
                 -d '{"ref":"${branch}","inputs":{"image_tag":"${tag}"}}')
               echo "HTTP Status: \$HTTP_CODE"
               cat /tmp/gh_response.txt || true
@@ -266,7 +266,7 @@ pipeline {
               EXISTING=\$(curl -sf \
                 -H "Authorization: Bearer \$GH_TOKEN" \
                 -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/repos/Kevine-fr/Tea-web/pulls?state=open&base=${base}&head=Kevine-fr:${branch}" \
+                "https://api.github.com/repos/Kevine-fr/Tea-Web/pulls?state=open&base=${base}&head=Kevine-fr:${branch}" \
                 | grep -o '"number": *[0-9]*' | head -1 | grep -o '[0-9]*' || echo "")
               if [ -n "\$EXISTING" ]; then
                 echo "PR #\$EXISTING deja ouverte — ajout du label jenkins-approved."
@@ -274,14 +274,14 @@ pipeline {
                   -H "Authorization: Bearer \$GH_TOKEN" \
                   -H "Accept: application/vnd.github+json" \
                   -H "Content-Type: application/json" \
-                  "https://api.github.com/repos/Kevine-fr/Tea-web/issues/\$EXISTING/labels" \
+                  "https://api.github.com/repos/Kevine-fr/Tea-Web/issues/\$EXISTING/labels" \
                   -d '{"labels":["jenkins-approved"]}' || true
               else
                 RESULT=\$(curl -s -X POST \
                   -H "Authorization: Bearer \$GH_TOKEN" \
                   -H "Accept: application/vnd.github+json" \
                   -H "Content-Type: application/json" \
-                  "https://api.github.com/repos/Kevine-fr/Tea-web/pulls" \
+                  "https://api.github.com/repos/Kevine-fr/Tea-Web/pulls" \
                   -d '{"title":"${title}","head":"${branch}","base":"${base}"}')
                 PR_NUM=\$(echo "\$RESULT" | grep -o '"number": *[0-9]*' | head -1 | grep -o '[0-9]*' || echo "")
                 if [ -z "\$PR_NUM" ]; then
@@ -291,7 +291,7 @@ pipeline {
                     -H "Authorization: Bearer \$GH_TOKEN" \
                     -H "Accept: application/vnd.github+json" \
                     -H "Content-Type: application/json" \
-                    "https://api.github.com/repos/Kevine-fr/Tea-web/issues/\$PR_NUM/labels" \
+                    "https://api.github.com/repos/Kevine-fr/Tea-Web/issues/\$PR_NUM/labels" \
                     -d '{"labels":["jenkins-approved"]}' || true
                   echo "PR #\$PR_NUM creee : ${branch} vers ${base}"
                 fi
@@ -315,14 +315,14 @@ pipeline {
           def branch = env.BRANCH_NAME ?: 'N/A'
           mail(
             to:      env.NOTIFY_EMAIL,
-            subject: "✅ [Jenkins] Build SUCCESS — Tea-web/${branch} #${env.BUILD_NUMBER}",
+            subject: "✅ [Jenkins] Build SUCCESS — Tea-Web/${branch} #${env.BUILD_NUMBER}",
             body: """
 Bonjour,
 
 Le build Jenkins du frontend s'est terminé avec succès.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Projet   : Tea-web (React/Vite)
+  Projet   : Tea-Web (React/Vite)
   Branche  : ${branch}
   Build    : #${env.BUILD_NUMBER}
   Image    : zstin4/tea-web:${tag}
@@ -345,14 +345,14 @@ Jenkins CI
           def branch = env.BRANCH_NAME ?: 'N/A'
           mail(
             to:      env.NOTIFY_EMAIL,
-            subject: "❌ [Jenkins] Build FAILURE — Tea-web/${branch} #${env.BUILD_NUMBER}",
+            subject: "❌ [Jenkins] Build FAILURE — Tea-Web/${branch} #${env.BUILD_NUMBER}",
             body: """
 Bonjour,
 
 Le build Jenkins du frontend a échoué.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Projet   : Tea-web (React/Vite)
+  Projet   : Tea-Web (React/Vite)
   Branche  : ${branch}
   Build    : #${env.BUILD_NUMBER}
   Durée    : ${currentBuild.durationString}
