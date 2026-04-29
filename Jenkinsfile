@@ -83,7 +83,7 @@ pipeline {
             -e SONAR_TOKEN=${SONAR_TOKEN} \
             sonarsource/sonar-scanner-cli:11.1 \
             sonar-scanner \
-              -Dsonar.projectKey=Tea-Web \
+              -Dsonar.projectKey=Tea-web \
               -Dsonar.projectName="The Tip Top - Frontend" \
               -Dsonar.projectVersion=1.0 \
               -Dsonar.sources=src \
