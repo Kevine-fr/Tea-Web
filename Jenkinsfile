@@ -7,8 +7,8 @@ pipeline {
   }
 
   environment {
-    DOCKER_IMAGE = 'zstin4/tea-web'
-    NOTIFY_EMAIL = credentials('email')
+    DOCKER_IMAGE = credentials('docker-image')
+    NOTIFY_EMAIL = credentials('notify-email')
   }
   
   stages { 
@@ -61,6 +61,40 @@ pipeline {
             echo 'Lint : avertissements détectés (non bloquant)'
           }
         }
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 4. QUALITÉ — Analyse statique SonarQube
+    // ══════════════════════════════════════════════════════════
+    stage('SonarQube Analysis') {
+      agent any
+      environment {
+        SONAR_TOKEN = credentials('sonarqube-token')
+      }
+      steps {
+        sh '''
+          SONAR_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' sonarqube_tea)
+          JENKINS_CONTAINER=$(docker inspect --format="{{.Id}}" jenkins_tea)
+          docker run --rm \
+            --network backend \
+            --volumes-from ${JENKINS_CONTAINER} \
+            -w $(pwd) \
+            -e SONAR_TOKEN=${SONAR_TOKEN} \
+            sonarsource/sonar-scanner-cli:11.1 \
+            sonar-scanner \
+              -Dsonar.projectKey=Tea-web \
+              -Dsonar.projectName="The Tip Top - Frontend" \
+              -Dsonar.projectVersion=1.0 \
+              -Dsonar.sources=src \
+              -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.test.*,**/*.spec.* \
+              -Dsonar.tests=src \
+              -Dsonar.test.inclusions=**/*.test.*,**/*.spec.* \
+              -Dsonar.sourceEncoding=UTF-8 \
+              -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+              -Dsonar.host.url=http://${SONAR_IP}:9000 \
+              -Dsonar.token=${SONAR_TOKEN}
+        '''
       }
     }
 
