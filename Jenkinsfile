@@ -7,7 +7,7 @@ pipeline {
   }
 
   environment {
-    DOCKER_IMAGE = credentials('docker-image')
+    DOCKER_IMAGE = credentials('docker-image-web')
     NOTIFY_EMAIL = credentials('notify-email')
   }
   
