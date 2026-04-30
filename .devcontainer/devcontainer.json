@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
   "name": "Tea-web Dev",
   "build": {
@@ -16,4 +17,21 @@
   },
   "postCreateCommand": "npm create vite@latest . -- --template react && npm install",
   "remoteUser": "root"
+=======
+{
+  "name": "Tea-web Dev",
+  "dockerComposeFile": "../docker-compose.dev.yml",
+  "service": "app",
+  "workspaceFolder": "/app",
+  "forwardPorts": [5173],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "postCreateCommand": "npm install && echo 'Configuration effectuee avec succes ✅'"
+>>>>>>> 55eefcf6fbea67fca901b99955bc6613807663a2
 }

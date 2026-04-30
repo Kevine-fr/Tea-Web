@@ -1,10 +1,6 @@
-version: "3.8"
-
 services:
   react_app:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
+    image: zstin4/tea-web:${IMAGE_TAG}
     container_name: tea_web
     restart: always
     expose:

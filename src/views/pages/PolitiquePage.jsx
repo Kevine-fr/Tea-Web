@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 const CSS = `
 @keyframes accIn  { from { opacity:0; transform: translateY(18px) } to { opacity:1; transform: none } }
@@ -73,6 +74,7 @@ export default function PolitiquePage() {
     <Layout>
       <style>{CSS}</style>
       <PageBanner title="Politique" />
+              <CountdownBanner />
       <section style={{ position: 'relative', background: 'var(--cream)', padding: '3rem 1.5rem 4rem', overflow: 'hidden' }}>
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 820, margin: '0 auto' }}>
           <h2 ref={titleRef} style={{ textAlign: 'center', marginBottom: '0.75rem', opacity: 0 }}>

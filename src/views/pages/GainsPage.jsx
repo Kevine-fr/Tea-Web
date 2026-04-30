@@ -4,6 +4,7 @@ import Layout                from '../components/Layout.jsx'
 import PageBanner            from '../components/PageBanner.jsx'
 import LoadingSpinner        from '../components/LoadingSpinner.jsx'
 import toast                 from 'react-hot-toast'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 const STYLES = `
   @keyframes slideUp {
@@ -118,6 +119,7 @@ export default function GainsPage() {
   return (
     <Layout>
       <PageBanner title="Suivi des gains" />
+              <CountdownBanner />
 
       <div style={{ position: 'relative', background: 'var(--cream)', padding: '2.5rem 1.5rem 4rem', overflow: 'hidden' }}>
 

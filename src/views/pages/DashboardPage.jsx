@@ -6,6 +6,7 @@ import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import toast from 'react-hot-toast'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 /* ─── Confetti hook (canvas, zéro dépendance) ───────────── */
 function useConfetti() {
@@ -468,6 +469,7 @@ export default function DashboardPage() {
   return (
     <Layout>
       <PageBanner title="Tableau de bord" />
+              <CountdownBanner />
 
       {/* ── Win overlay ── */}
       {winData && (

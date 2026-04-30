@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import PageBanner from '../components/PageBanner.jsx'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 /* ─── Particules de fond ──────────────────────────────────── */
 const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
@@ -330,6 +331,7 @@ export default function JeuPage() {
     <Layout>
       <style>{CSS}</style>
       <PageBanner title="Jeu-concours" />
+              <CountdownBanner />
 
       <section className="jeu-section">
 

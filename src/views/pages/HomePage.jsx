@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import AnimatedLeaves from '../components/AnimatedLeaves.jsx'
+import CountdownBanner from '../components/CountdownBanner.jsx'
 
 /* ─── Particules de fond ──────────────────────────────────── */
 const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
@@ -447,6 +448,7 @@ export default function HomePage() {
           background: '#f5f0e8', overflow: 'hidden',
         }}>
           <AnimatedLeaves />
+                  <CountdownBanner />
 
           {/* Particules montantes */}
           {PARTICLES.map(p => (
