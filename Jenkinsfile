@@ -7,8 +7,8 @@ pipeline {
   }
 
   environment {
-    DOCKER_IMAGE = 'zstin4/tea-web'
-    NOTIFY_EMAIL = credentials('email')
+    DOCKER_IMAGE = credentials('docker-image-web')
+    NOTIFY_EMAIL = credentials('notify-email')
   }
   
   stages { 
@@ -61,6 +61,40 @@ pipeline {
             echo 'Lint : avertissements détectés (non bloquant)'
           }
         }
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 4. QUALITÉ — Analyse statique SonarQube
+    // ══════════════════════════════════════════════════════════
+    stage('SonarQube Analysis') {
+      agent any
+      environment {
+        SONAR_TOKEN = credentials('sonarqube-token')
+      }
+      steps {
+        sh '''
+          SONAR_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' sonarqube_tea)
+          JENKINS_CONTAINER=$(docker inspect --format="{{.Id}}" jenkins_tea)
+          docker run --rm \
+            --network backend \
+            --volumes-from ${JENKINS_CONTAINER} \
+            -w $(pwd) \
+            -e SONAR_TOKEN=${SONAR_TOKEN} \
+            sonarsource/sonar-scanner-cli:11.1 \
+            sonar-scanner \
+              -Dsonar.projectKey=Tea-web \
+              -Dsonar.projectName="The Tip Top - Frontend" \
+              -Dsonar.projectVersion=1.0 \
+              -Dsonar.sources=src \
+              -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.test.*,**/*.spec.* \
+              -Dsonar.tests=src \
+              -Dsonar.test.inclusions=**/*.test.*,**/*.spec.* \
+              -Dsonar.sourceEncoding=UTF-8 \
+              -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+              -Dsonar.host.url=http://${SONAR_IP}:9000 \
+              -Dsonar.token=${SONAR_TOKEN}
+        '''
       }
     }
 
@@ -179,34 +213,34 @@ pipeline {
     // ══════════════════════════════════════════════════════════
     stage('Trigger Deployment') {
       agent any
+      when {
+        not { branch 'dev' }
+      }
       steps {
         script {
           def branch = env.BRANCH_NAME
           def tag    = env.DOCKER_FULL_TAG
 
-          if (branch == 'staging' || branch == 'main') {
-            def workflow = (branch == 'staging') ? 'deploy-staging.yml' : 'deploy.yml'
-            def env_name = (branch == 'staging') ? 'Staging' : 'Production'
-            echo "Declenchement deploiement web ${env_name} avec image ${tag}..."
-            withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
-              sh """
-                HTTP_CODE=\$(curl -s -o /tmp/gh_response.txt -w "%{http_code}" -X POST \
-                  -H "Authorization: Bearer \$GH_TOKEN" \
-                  -H "Accept: application/vnd.github+json" \
-                  -H "Content-Type: application/json" \
-                  "https://api.github.com/repos/Kevine-fr/Tea-web/actions/workflows/${workflow}/dispatches" \
-                  -d '{"ref":"${branch}","inputs":{"image_tag":"${tag}"}}')
-                echo "HTTP Status: \$HTTP_CODE"
-                cat /tmp/gh_response.txt || true
-                if [ "\$HTTP_CODE" = "204" ] || [ "\$HTTP_CODE" = "200" ]; then
-                  echo "Deploiement web ${env_name} declenche avec le tag ${tag}"
-                else
-                  echo "Erreur declenchement (HTTP \$HTTP_CODE) — non bloquant"
-                fi
-              """
-            }
-          } else {
-            echo "Branche ${branch} : pas de deploiement automatique."
+          def workflow = (branch == 'staging') ? 'cd-staging.yml' : 'cd-prod.yml'
+          def env_name = (branch == 'staging') ? 'Staging' : 'Production'
+
+          echo "Declenchement deploiement web ${env_name} avec image ${tag}..."
+          withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
+            sh """
+              HTTP_CODE=\$(curl -s -o /tmp/gh_response.txt -w "%{http_code}" -X POST \
+                -H "Authorization: Bearer \$GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                -H "Content-Type: application/json" \
+                "https://api.github.com/repos/Kevine-fr/Tea-Web/actions/workflows/${workflow}/dispatches" \
+                -d '{"ref":"${branch}","inputs":{"image_tag":"${tag}"}}')
+              echo "HTTP Status: \$HTTP_CODE"
+              cat /tmp/gh_response.txt || true
+              if [ "\$HTTP_CODE" = "204" ] || [ "\$HTTP_CODE" = "200" ]; then
+                echo "Deploiement web ${env_name} declenche avec le tag ${tag}"
+              else
+                error "Erreur declenchement (HTTP \$HTTP_CODE)"
+              fi
+            """
           }
         }
       }
@@ -232,7 +266,7 @@ pipeline {
               EXISTING=\$(curl -sf \
                 -H "Authorization: Bearer \$GH_TOKEN" \
                 -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/repos/Kevine-fr/Tea-web/pulls?state=open&base=${base}&head=Kevine-fr:${branch}" \
+                "https://api.github.com/repos/Kevine-fr/Tea-Web/pulls?state=open&base=${base}&head=Kevine-fr:${branch}" \
                 | grep -o '"number": *[0-9]*' | head -1 | grep -o '[0-9]*' || echo "")
               if [ -n "\$EXISTING" ]; then
                 echo "PR #\$EXISTING deja ouverte — ajout du label jenkins-approved."
@@ -240,14 +274,14 @@ pipeline {
                   -H "Authorization: Bearer \$GH_TOKEN" \
                   -H "Accept: application/vnd.github+json" \
                   -H "Content-Type: application/json" \
-                  "https://api.github.com/repos/Kevine-fr/Tea-web/issues/\$EXISTING/labels" \
+                  "https://api.github.com/repos/Kevine-fr/Tea-Web/issues/\$EXISTING/labels" \
                   -d '{"labels":["jenkins-approved"]}' || true
               else
                 RESULT=\$(curl -s -X POST \
                   -H "Authorization: Bearer \$GH_TOKEN" \
                   -H "Accept: application/vnd.github+json" \
                   -H "Content-Type: application/json" \
-                  "https://api.github.com/repos/Kevine-fr/Tea-web/pulls" \
+                  "https://api.github.com/repos/Kevine-fr/Tea-Web/pulls" \
                   -d '{"title":"${title}","head":"${branch}","base":"${base}"}')
                 PR_NUM=\$(echo "\$RESULT" | grep -o '"number": *[0-9]*' | head -1 | grep -o '[0-9]*' || echo "")
                 if [ -z "\$PR_NUM" ]; then
@@ -257,7 +291,7 @@ pipeline {
                     -H "Authorization: Bearer \$GH_TOKEN" \
                     -H "Accept: application/vnd.github+json" \
                     -H "Content-Type: application/json" \
-                    "https://api.github.com/repos/Kevine-fr/Tea-web/issues/\$PR_NUM/labels" \
+                    "https://api.github.com/repos/Kevine-fr/Tea-Web/issues/\$PR_NUM/labels" \
                     -d '{"labels":["jenkins-approved"]}' || true
                   echo "PR #\$PR_NUM creee : ${branch} vers ${base}"
                 fi
@@ -281,14 +315,14 @@ pipeline {
           def branch = env.BRANCH_NAME ?: 'N/A'
           mail(
             to:      env.NOTIFY_EMAIL,
-            subject: "✅ [Jenkins] Build SUCCESS — Tea-web/${branch} #${env.BUILD_NUMBER}",
+            subject: "✅ [Jenkins] Build SUCCESS — Tea-Web/${branch} #${env.BUILD_NUMBER}",
             body: """
 Bonjour,
 
 Le build Jenkins du frontend s'est terminé avec succès.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Projet   : Tea-web (React/Vite)
+  Projet   : Tea-Web (React/Vite)
   Branche  : ${branch}
   Build    : #${env.BUILD_NUMBER}
   Image    : zstin4/tea-web:${tag}
@@ -311,14 +345,14 @@ Jenkins CI
           def branch = env.BRANCH_NAME ?: 'N/A'
           mail(
             to:      env.NOTIFY_EMAIL,
-            subject: "❌ [Jenkins] Build FAILURE — Tea-web/${branch} #${env.BUILD_NUMBER}",
+            subject: "❌ [Jenkins] Build FAILURE — Tea-Web/${branch} #${env.BUILD_NUMBER}",
             body: """
 Bonjour,
 
 Le build Jenkins du frontend a échoué.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Projet   : Tea-web (React/Vite)
+  Projet   : Tea-Web (React/Vite)
   Branche  : ${branch}
   Build    : #${env.BUILD_NUMBER}
   Durée    : ${currentBuild.durationString}
