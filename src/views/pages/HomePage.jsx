@@ -480,13 +480,23 @@ export default function HomePage() {
   }, [])
 
   /* ── Valeurs dérivées du breakpoint ── */
-  const heroMargin = isMobile
-    ? '1.25rem 1rem 0 1rem'
+  /* Gouttière horizontale unique pour TOUTES les sections de la page,
+     afin que la hero card et la section steps soient parfaitement alignées. */
+  const pageGutter = isMobile
+    ? '1rem'
     : isTablet
-      ? '2rem 1.5rem 0 1.5rem'
+      ? '1.5rem'
       : isLaptop
-        ? '2.5rem 4rem 0 4rem'
-        : '3rem clamp(4rem, 10vw, 10rem) 0 clamp(4rem, 10vw, 10rem)'
+        ? '4rem'
+        : 'clamp(4rem, 10vw, 10rem)'
+
+  const heroMargin = isMobile
+    ? `1.25rem ${pageGutter} 0 ${pageGutter}`
+    : isTablet
+      ? `2rem ${pageGutter} 0 ${pageGutter}`
+      : isLaptop
+        ? `2.5rem ${pageGutter} 0 ${pageGutter}`
+        : `3rem ${pageGutter} 0 ${pageGutter}`
 
   const heroPadding = isMobile
     ? '2rem 1.25rem'
@@ -731,12 +741,10 @@ export default function HomePage() {
           <div ref={stepsRef} style={{
             position:'relative', zIndex:2,
             margin: isMobile
-              ? '1.5rem 1rem 0 1rem'
+              ? `1.5rem ${pageGutter} 0 ${pageGutter}`
               : isTablet
-                ? '2rem 1.5rem 0 1.5rem'
-                : isLaptop
-                  ? '2rem 4rem'
-                  : '0 clamp(4rem, 8vw, 8rem)',
+                ? `2rem ${pageGutter} 0 ${pageGutter}`
+                : `2rem ${pageGutter} 0 ${pageGutter}`,
             display:'flex',
             alignItems: isTablet ? 'stretch' : 'center',
             justifyContent: isTablet ? 'center' : 'flex-start',
