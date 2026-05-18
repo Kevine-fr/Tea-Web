@@ -24,6 +24,10 @@ const SPARKS = [
 ]
 
 const CSS = `
+/* ─── Reset overflow horizontal ──────────────────────────── */
+.home-root { overflow-x: hidden; }
+.home-root *, .home-root *::before, .home-root *::after { box-sizing: border-box; }
+
 /* ─── Entrées ────────────────────────────────────────────── */
 @keyframes fadeInLeft  { from{opacity:0;transform:translateX(-40px) scale(.97)} to{opacity:1;transform:none} }
 @keyframes fadeInRight { from{opacity:0;transform:translateX(50px)  scale(.97)} to{opacity:1;transform:none} }
@@ -250,6 +254,34 @@ const CSS = `
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
   animation: heroShimmerSweep 5s ease-in-out 2s infinite;
 }
+
+/* ─── Media queries fines pour les ajustements pointus ── */
+@media (max-width: 1024px) {
+  /* Sur tablette, désactive le hover transform agressif (pas de souris) */
+  .home-cup:hover, .home-tin:hover, .home-ticket:hover {
+    filter: none !important;
+  }
+}
+@media (max-width: 768px) {
+  /* Limite la taille des feuilles décoratives sur mobile */
+  .home-leaf { max-width: 60vw; }
+  /* Cercles déco plus discrets sur mobile */
+  .home-deco-circle-1 { width: 320px !important; height: 320px !important; top: -120px !important; left: -120px !important; }
+  .home-deco-circle-2 { width: 200px !important; height: 200px !important; bottom: -60px !important; right: -60px !important; }
+  /* Hover transform désactivé sur tactile */
+  .step-card-wrapper:hover .step-card-inner { transform: translateY(-4px) !important; }
+}
+@media (max-width: 380px) {
+  /* Évite tout débordement sur très petits écrans */
+  .home-cta-btn { width: 100%; text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cup-idle, .tin-idle, .steam-idle, .ticket-idle, .badge-idle,
+  .home-hundred, .home-particle, .home-spark, .hero-shimmer::after,
+  .home-cta-btn:hover {
+    animation: none !important;
+  }
+}
 `
 
 function startIdleAfterEntry(el, idleClass, entryDurationMs, finalStyles = {}) {
@@ -276,18 +308,28 @@ function useReveal(t = 0.04) {
   return [ref, vis]
 }
 
-function useWindowWidth() {
-  const [width, setWidth] = useState(window.innerWidth)
+/* ─── Hook responsive unifié ─────────────────────────────── */
+function useResponsive() {
+  const [width, setWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1280
+  )
   useEffect(() => {
     const onResize = () => setWidth(window.innerWidth)
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
-  return width
+  return {
+    width,
+    isLaptop:      width <= 1200,   // resserre les marges
+    isTablet:      width <= 1024,   // hero passe en stack, masque cup/steam
+    isMobile:      width <= 768,    // masque toutes les images flottantes
+    isSmallMobile: width <= 480,    // typographie compacte
+    isXSMobile:    width <= 360,    // ultra compact
+  }
 }
 
 /* ─── Tilt 3D sur les step cards ─────────────────────────── */
-function StepCard({ n, img, label, visible, delay, isMobile }) {
+function StepCard({ n, img, label, visible, delay, isMobile, isSmallMobile }) {
   const wrapRef = useRef(null)
 
   useEffect(() => {
@@ -313,9 +355,10 @@ function StepCard({ n, img, label, visible, delay, isMobile }) {
   return (
     <div ref={wrapRef} className="step-card-wrapper" style={{
       position: 'relative', paddingTop: 22,
-      width: isMobile ? '100%' : 350,
-      maxWidth: isMobile ? 320 : 350,
-      flexShrink: 0,
+      width: '100%',
+      maxWidth: isSmallMobile ? '100%' : isMobile ? 360 : 350,
+      flex: isMobile ? '1 1 100%' : '1 1 240px',
+      minWidth: 0,
       opacity: visible ? 1 : 0,
       transform: visible ? 'translateY(0)' : 'translateY(40px)',
       transition: `opacity .55s ease ${delay}s, transform .6s cubic-bezier(.22,.68,0,1.1) ${delay}s`,
@@ -338,18 +381,20 @@ function StepCard({ n, img, label, visible, delay, isMobile }) {
       }}>
         <div style={{
           background: '#EEE1CE',
-          padding: isMobile ? '1.5rem 1rem 1.2rem' : '0rem 1rem 0rem',
+          padding: 'clamp(1rem, 3vw, 1.6rem) clamp(0.75rem, 2vw, 1rem)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: isMobile ? 120 : 180,
         }}>
           <img className="step-img" src={img} alt={label} style={{
-            width: isMobile ? 56 : 150, height: isMobile ? 56 : 150,
+            width:  'clamp(72px, 14vw, 150px)',
+            height: 'clamp(72px, 14vw, 150px)',
             objectFit: 'contain', display: 'block',
           }} />
         </div>
         <div style={{ background: '#1a3c2e', padding: '0.85rem 0.75rem', textAlign: 'center' }}>
           <span className="step-label" style={{
             color: '#fff', fontWeight: 700,
-            fontSize: isMobile ? '0.95rem' : '0.9rem',
+            fontSize: 'clamp(0.88rem, 1.5vw, 0.95rem)',
             lineHeight: 1.3, fontFamily: "'Lato', sans-serif", display: 'block',
           }}>
             {label}
@@ -372,11 +417,7 @@ export default function HomePage() {
   const heroRef   = useRef(null)
 
   const [stepsRef, stepsVis] = useReveal(0.04)
-  const width = useWindowWidth()
-
-  const isTablet      = width <= 1100
-  const isMobile      = width <= 768
-  const isSmallMobile = width <= 480
+  const { width, isLaptop, isTablet, isMobile, isSmallMobile, isXSMobile } = useResponsive()
 
   /* ── Animations d'entrée + passage idle ── */
   useEffect(() => {
@@ -438,17 +479,32 @@ export default function HomePage() {
     span.addEventListener('animationend', () => span.remove())
   }, [])
 
+  /* ── Valeurs dérivées du breakpoint ── */
+  const heroMargin = isMobile
+    ? '1.25rem 1rem 0 1rem'
+    : isTablet
+      ? '2rem 1.5rem 0 1.5rem'
+      : isLaptop
+        ? '2.5rem 4rem 0 4rem'
+        : '3rem clamp(4rem, 10vw, 10rem) 0 clamp(4rem, 10vw, 10rem)'
+
+  const heroPadding = isMobile
+    ? '2rem 1.25rem'
+    : isTablet
+      ? '2.5rem 1.75rem'
+      : 'clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 3vw, 2rem)'
+
   return (
     <Layout>
       <style>{CSS}</style>
 
-      <div>
+      <div className="home-root">
         <section style={{
           flex: '1.6', position: 'relative',
           background: '#f5f0e8', overflow: 'hidden',
         }}>
           <AnimatedLeaves />
-                  <CountdownBanner />
+          <CountdownBanner />
 
           {/* Particules montantes */}
           {PARTICLES.map(p => (
@@ -470,13 +526,13 @@ export default function HomePage() {
           ))}
 
           {/* Cercles déco tournants */}
-          <div style={{
+          <div className="home-deco-circle-1" style={{
             position:'absolute', borderRadius:'50%', pointerEvents:'none',
             width:500, height:500, top:-200, left:-150, zIndex:0,
             border:'1.5px dashed rgba(26,60,46,.07)',
             animation:'decoSpin 40s linear infinite',
           }} />
-          <div style={{
+          <div className="home-deco-circle-2" style={{
             position:'absolute', borderRadius:'50%', pointerEvents:'none',
             width:300, height:300, bottom:-80, right:-80, zIndex:0,
             border:'1.5px dashed rgba(200,100,40,.07)',
@@ -486,11 +542,13 @@ export default function HomePage() {
           <img className="home-leaf" src="/images/Accueil/img_09.png" alt="" style={{
             position:'absolute', right:'5%', top:'-30%',
             width: isMobile ? '50%' : 'auto',
+            maxWidth: '60vw',
             zIndex:1, transform:'rotate(90deg)', pointerEvents:'none',
           }} />
           <img className="home-leaf" src="/images/Accueil/img_09.png" alt="" style={{
             position:'absolute', right: isMobile ? '5%' : '20%', bottom:'-30%',
             width: isMobile ? '50%' : 'auto',
+            maxWidth: '60vw',
             zIndex:1, transform:'rotate(90deg)', pointerEvents:'none',
           }} />
 
@@ -499,17 +557,13 @@ export default function HomePage() {
             ref={heroRef}
             style={{
               zIndex:2,
-              padding: isMobile ? '2rem 1.25rem' : '3.5rem 2rem',
-              margin: isMobile
-                ? '1.25rem 1rem 0 1rem'
-                : isTablet
-                  ? '2rem 2rem 0 2rem'
-                  : '3rem 10rem 0 10rem',
+              padding: heroPadding,
+              margin: heroMargin,
               position:'relative', borderRadius:24,
               background:'#EEE1CE', border:'1px solid #e2d9c8',
               boxShadow:'0 6px 40px rgba(0,0,0,.08)', overflow:'visible',
               display:'grid',
-              gridTemplateColumns: isTablet ? '1fr' : '38% 62%',
+              gridTemplateColumns: isTablet ? '1fr' : 'minmax(0, 38%) minmax(0, 62%)',
               gap: isTablet ? '2rem' : 0,
               animation:'heroCardHue 10s ease-in-out 3s infinite',
             }}
@@ -518,10 +572,14 @@ export default function HomePage() {
             <div className="hero-shimmer" />
 
             {/* ── Colonne gauche : texte ── */}
-            <div style={{ position:'relative', zIndex:2 }}>
+            <div style={{
+              position:'relative', zIndex:2,
+              textAlign: isTablet ? 'center' : 'left',
+            }}>
               <p ref={tagRef} className="home-tag" style={{
-                fontSize: isMobile ? '1rem' : isTablet ? '1.2rem' : '1.5rem',
-                fontWeight:700, letterSpacing: isMobile ? '0.08em' : '0.18em',
+                fontSize: 'clamp(0.85rem, 1.4vw + 0.4rem, 1.5rem)',
+                fontWeight:700,
+                letterSpacing: isMobile ? '0.08em' : '0.18em',
                 textTransform:'uppercase', color:'#6b6b6b',
                 marginBottom:'0.85rem', opacity:0,
               }}>
@@ -533,19 +591,25 @@ export default function HomePage() {
                 display:'inline-flex', alignItems:'center', justifyContent:'center',
                 marginBottom: isMobile ? '1.4rem' : '1.2rem',
                 opacity:0,
-                padding: isMobile ? '0.55rem 2.8rem' : '0.65rem 3.5rem',
+                padding: isXSMobile
+                  ? '0.5rem 2rem'
+                  : isMobile
+                    ? '0.55rem 2.8rem'
+                    : '0.65rem clamp(2.5rem, 5vw, 3.5rem)',
                 minHeight: isMobile ? 52 : 60,
+                maxWidth: '100%',
               }}>
                 <img src="/images/Accueil/img_03.png" alt="" style={{
                   position:'absolute', top:'50%', left:'50%',
                   transform:'translate(-50%, -50%) rotate(90deg) scaleY(-1)',
-                  height: isMobile ? '260px' : '360px',
+                  height: isXSMobile ? '220px' : isMobile ? '260px' : 'clamp(280px, 30vw, 360px)',
                   width:'auto', zIndex:0, pointerEvents:'none', userSelect:'none',
+                  maxWidth:'120%',
                 }} />
                 <span style={{
                   position:'relative', zIndex:1,
                   fontFamily:"'Dancing Script', cursive",
-                  fontSize: isMobile ? '2.1rem' : '2.6rem',
+                  fontSize: isXSMobile ? '1.8rem' : isMobile ? '2.1rem' : 'clamp(2rem, 3vw, 2.6rem)',
                   color:'#fff', fontWeight:600,
                   whiteSpace:'nowrap',
                   textShadow:'0 1px 4px rgba(0,0,0,.18)', lineHeight:1,
@@ -555,9 +619,11 @@ export default function HomePage() {
               </div>
 
               <p ref={descRef} style={{
-                fontSize: isMobile ? '1rem' : isTablet ? '1.05rem' : '1.2rem',
-                lineHeight:1.8, color:'#4a4a4a', opacity:0,
-                maxWidth: isTablet ? '100%' : '90%',
+                fontSize: 'clamp(0.95rem, 0.7vw + 0.7rem, 1.2rem)',
+                lineHeight:1.7, color:'#4a4a4a', opacity:0,
+                maxWidth: isTablet ? '640px' : '90%',
+                marginLeft: isTablet ? 'auto' : 0,
+                marginRight: isTablet ? 'auto' : 0,
               }}>
                 Célébrez l'ouverture de notre 10ème boutique à Nice avec notre jeu-concours
                 qui est 100% gagnant et voir une chance de gagner des cadeaux et lots de thé
@@ -575,11 +641,14 @@ export default function HomePage() {
               display:'flex', flexDirection:'column',
               alignItems:'center', gap:'1.25rem',
               width:     isTablet ? '100%' : 'auto',
-              marginTop: isTablet ? '1rem' : 0,
+              marginTop: isTablet ? '0.5rem' : 0,
             }}>
               <div ref={ticketRef} className="home-ticket" style={{
-                width: isMobile ? '100%' : isTablet ? '70%' : '95%',
-                maxWidth: isMobile ? 340 : 520,
+                width: isMobile
+                  ? 'min(95%, 360px)'
+                  : isTablet
+                    ? 'min(70%, 460px)'
+                    : 'min(95%, 520px)',
                 transform:'rotate(-5deg)',
                 filter:'drop-shadow(0 8px 20px rgba(0,0,0,.18))',
                 opacity:0,
@@ -596,23 +665,26 @@ export default function HomePage() {
                   }}>
                     <p style={{
                       fontFamily:"'Playfair Display', serif", fontWeight:700,
-                      fontSize: isMobile ? '1.2rem' : '1.8rem',
+                      fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)',
                       color:'#1a1a1a', marginBottom:'0.2rem', lineHeight:1.3,
                     }}>Tirage au sort final :</p>
                     <p style={{
                       fontFamily:"'Dancing Script', cursive",
-                      fontSize: isMobile ? '1.6rem' : '2.2rem',
+                      fontSize: 'clamp(1.5rem, 3vw, 2.2rem)',
                       color:'#e8431a', fontWeight:700, lineHeight:1.15,
                     }}>1 AN de thé offert</p>
                     <div style={{ width:'55%', height:1, background:'rgba(170,130,40,.5)', margin:'0.25rem auto' }} />
-                    <p style={{ fontSize: isMobile ? '0.85rem' : '1rem', color:'#666', lineHeight:1.5 }}>
+                    <p style={{
+                      fontSize: 'clamp(0.78rem, 1vw, 1rem)',
+                      color:'#666', lineHeight:1.5,
+                    }}>
                       Jeu limité dans le temps.<br />Voir modalité en magasin et sur le site
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div ref={btnRef} style={{ opacity:0 }}>
+              <div ref={btnRef} style={{ opacity:0, width: isXSMobile ? '100%' : 'auto' }}>
                 <Link
                   to="/register"
                   className="home-cta-btn"
@@ -621,11 +693,13 @@ export default function HomePage() {
                     display:'inline-block',
                     background:'#e8431a', color:'#fff',
                     borderRadius:50,
-                    padding: isMobile ? '0.8rem 2rem' : '0.9rem 2.5rem',
-                    fontSize: isMobile ? '0.95rem' : '1.05rem',
+                    padding: isMobile ? '0.85rem 2rem' : '0.9rem clamp(2rem, 3vw, 2.5rem)',
+                    fontSize: 'clamp(0.95rem, 1.2vw, 1.05rem)',
                     fontWeight:700, textDecoration:'none',
                     boxShadow:'0 4px 16px rgba(232,67,26,.35)',
                     fontFamily:"'Lato', sans-serif",
+                    width: isXSMobile ? '100%' : 'auto',
+                    textAlign: 'center',
                   }}
                 >
                   Jouer maintenant
@@ -633,20 +707,23 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* ── Images flottantes — desktop uniquement ── */}
+            {/* ── Images flottantes — desktop uniquement (>1024px) ── */}
             {!isTablet && (
               <>
                 <img ref={steamRef} className="home-steam" src="/images/Accueil/img_10.png" alt="" style={{
                   position:'absolute', bottom:'50%', right:'14.5%',
-                  width:'11.5%', opacity:0, zIndex:6,
+                  width: isLaptop ? '10%' : '11.5%',
+                  opacity:0, zIndex:6, pointerEvents:'none',
                 }} />
                 <img ref={cupRef} className="home-cup" src="/images/Accueil/img_02.png" alt="" style={{
                   position:'absolute', bottom:'0%', right:'7.5%',
-                  height:'70%', width:'auto', zIndex:5, opacity:0,
+                  height: isLaptop ? '60%' : '70%',
+                  width:'auto', zIndex:5, opacity:0,
                 }} />
                 <img ref={tinRef} className="home-tin" src="/images/Accueil/img_01.png" alt="" style={{
                   position:'absolute', top:'0%', right:'0%',
-                  height:'100%', width:'auto', zIndex:4, opacity:0,
+                  height: isLaptop ? '90%' : '100%',
+                  width:'auto', zIndex:4, opacity:0,
                 }} />
               </>
             )}
@@ -655,21 +732,31 @@ export default function HomePage() {
           {/* ════ SECTION STEPS ════ */}
           <div ref={stepsRef} style={{
             position:'relative', zIndex:2,
-            margin: isMobile ? '1.5rem 1rem 0 1rem' : isTablet ? '2rem 2rem 0 2rem' : '0 8rem',
+            margin: isMobile
+              ? '1.5rem 1rem 0 1rem'
+              : isTablet
+                ? '2rem 1.5rem 0 1.5rem'
+                : isLaptop
+                  ? '2rem 4rem'
+                  : '0 clamp(4rem, 8vw, 8rem)',
             display:'flex',
             alignItems: isTablet ? 'stretch' : 'center',
             justifyContent: isTablet ? 'center' : 'flex-start',
             flexWrap:'wrap',
-            gap: isMobile ? '1.25rem' : '3rem',
+            gap: isMobile ? '1.25rem' : isTablet ? '1.5rem' : '3rem',
           }}>
+            {/* ── 100% Gagnant + titre ── */}
             <div style={{
-              display:'flex', alignItems:'center',
+              display:'flex',
+              alignItems:'center',
               justifyContent: isMobile ? 'center' : 'flex-start',
               width: isTablet ? '100%' : 'auto',
-              flexWrap: isSmallMobile ? 'wrap' : 'nowrap',
+              flexWrap: isXSMobile ? 'wrap' : 'nowrap',
+              gap: isXSMobile ? '0.75rem' : 0,
             }}>
               <div className="home-hundred" style={{
-                height: isMobile ? 180 : 265,
+                height: isXSMobile ? 140 : isMobile ? 180 : isLaptop ? 220 : 265,
+                width:  isXSMobile ? 140 : isMobile ? 180 : isLaptop ? 220 : 265,
                 position:'relative', flexShrink:0,
                 opacity: stepsVis ? 1 : 0,
                 transform: stepsVis ? 'scale(1)' : 'scale(0.78)',
@@ -683,11 +770,14 @@ export default function HomePage() {
                 }}>
                   <span style={{
                     fontFamily:"'Playfair Display',serif", fontStyle:'italic',
-                    color:'#fff', fontSize: isMobile ? '1.45rem' : '2.2rem', lineHeight:1,
+                    color:'#fff',
+                    fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)',
+                    lineHeight:1,
                   }}>100%</span>
                   <span style={{
                     fontFamily:"'Playfair Display',serif", fontStyle:'italic',
-                    color:'#fff', fontSize: isMobile ? '1.45rem' : '2.2rem',
+                    color:'#fff',
+                    fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)',
                   }}>Gagnant</span>
                 </div>
               </div>
@@ -696,34 +786,44 @@ export default function HomePage() {
                 padding: isMobile ? '0.8rem 1rem' : '1rem',
                 backgroundColor:'#EEE1CE',
                 borderTopRightRadius:'25px', borderBottomRightRadius:'25px',
-                width: isSmallMobile ? '100%' : 'auto',
-                textAlign: isSmallMobile ? 'center' : 'left',
+                width: isXSMobile ? '100%' : 'auto',
+                textAlign: isXSMobile ? 'center' : 'left',
+                borderTopLeftRadius: isXSMobile ? '25px' : 0,
+                borderBottomLeftRadius: isXSMobile ? '25px' : 0,
               }}>
                 <h2 className="home-how-title" style={{
                   fontFamily:"'Playfair Display',serif", color:'#1a3c2e',
-                  fontSize: isMobile ? '1.2rem' : '1.55rem', margin:0,
-                  whiteSpace: isSmallMobile ? 'normal' : 'nowrap',
+                  fontSize: 'clamp(1.15rem, 1.8vw, 1.55rem)',
+                  margin:0,
+                  whiteSpace: isXSMobile ? 'normal' : 'nowrap',
                   opacity: stepsVis ? 1 : 0,
                   transform: stepsVis ? 'none' : 'translateX(-20px)',
                   transition:'opacity .55s ease .14s, transform .6s cubic-bezier(.22,.68,0,1.1) .14s',
                 }}>
-                  Comment ça marche ?
+                  Comment ça marche&nbsp;?
                 </h2>
               </div>
             </div>
 
+            {/* ── Step cards ── */}
             <div style={{
-              display:'flex', flexWrap:'wrap',
+              display:'flex',
+              flexWrap:'wrap',
               gap: isMobile ? '1rem' : '1.5rem',
               justifyContent:'center',
-              flex:1, width: isTablet ? '100%' : 'auto',
+              alignItems:'stretch',
+              flex: isTablet ? '1 1 100%' : '1 1 600px',
+              width: isTablet ? '100%' : 'auto',
+              minWidth: 0,
             }}>
-              <StepCard n={1} img="/images/Accueil/img_08.png" label="Récupère ton ticket" visible={stepsVis} delay={0.28} isMobile={isMobile} />
-              <StepCard n={2} img="/images/Accueil/img_07.png" label="Saisis ton code"      visible={stepsVis} delay={0.44} isMobile={isMobile} />
-              <StepCard n={3} img="/images/Accueil/img_04.png" label="Découvre ton lot"     visible={stepsVis} delay={0.60} isMobile={isMobile} />
+              <StepCard n={1} img="/images/Accueil/img_08.png" label="Récupère ton ticket" visible={stepsVis} delay={0.28} isMobile={isMobile} isSmallMobile={isSmallMobile} />
+              <StepCard n={2} img="/images/Accueil/img_07.png" label="Saisis ton code"      visible={stepsVis} delay={0.44} isMobile={isMobile} isSmallMobile={isSmallMobile} />
+              <StepCard n={3} img="/images/Accueil/img_04.png" label="Découvre ton lot"     visible={stepsVis} delay={0.60} isMobile={isMobile} isSmallMobile={isSmallMobile} />
             </div>
           </div>
 
+          {/* Bas de page : espace pour éviter la collision avec le footer */}
+          <div style={{ height: isMobile ? '2rem' : '3rem' }} />
         </section>
       </div>
     </Layout>
