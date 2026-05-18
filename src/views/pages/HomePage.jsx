@@ -591,25 +591,23 @@ export default function HomePage() {
                 display:'inline-flex', alignItems:'center', justifyContent:'center',
                 marginBottom: isMobile ? '1.4rem' : '1.2rem',
                 opacity:0,
-                padding: isXSMobile
-                  ? '0.5rem 2rem'
-                  : isMobile
-                    ? '0.55rem 2.8rem'
-                    : '0.65rem clamp(2.5rem, 5vw, 3.5rem)',
-                minHeight: isMobile ? 52 : 60,
+                padding: 'clamp(0.45rem, 1vw, 0.7rem) clamp(1.4rem, 5vw, 3.2rem)',
+                minHeight: isMobile ? 48 : 60,
                 maxWidth: '100%',
               }}>
+                {/* Hauteur de l'image = largeur visible après rotation 90°.
+                   clamp + min(…, calc(100vw - 110px)) garantit qu'elle ne déborde
+                   JAMAIS du hero card, même sur 320px. */}
                 <img src="/images/Accueil/img_03.png" alt="" style={{
                   position:'absolute', top:'50%', left:'50%',
                   transform:'translate(-50%, -50%) rotate(90deg) scaleY(-1)',
-                  height: isXSMobile ? '220px' : isMobile ? '260px' : 'clamp(280px, 30vw, 360px)',
+                  height: 'min(clamp(170px, 52vw, 360px), calc(100vw - 110px))',
                   width:'auto', zIndex:0, pointerEvents:'none', userSelect:'none',
-                  maxWidth:'120%',
                 }} />
                 <span style={{
                   position:'relative', zIndex:1,
                   fontFamily:"'Dancing Script', cursive",
-                  fontSize: isXSMobile ? '1.8rem' : isMobile ? '2.1rem' : 'clamp(2rem, 3vw, 2.6rem)',
+                  fontSize: 'clamp(1.5rem, 4vw, 2.6rem)',
                   color:'#fff', fontWeight:600,
                   whiteSpace:'nowrap',
                   textShadow:'0 1px 4px rgba(0,0,0,.18)', lineHeight:1,
