@@ -549,7 +549,7 @@ export default function HomePage() {
             animation:'decoSpinR 30s linear infinite',
           }} />
 
-          <img className="home-leaf" src="/images/Accueil/img_09.png" alt="" style={{
+          {/* <img className="home-leaf" src="/images/Accueil/img_09.png" alt="" style={{
             position:'absolute', right:'5%', top:'-30%',
             width: isMobile ? '50%' : 'auto',
             maxWidth: '60vw',
@@ -560,7 +560,7 @@ export default function HomePage() {
             width: isMobile ? '50%' : 'auto',
             maxWidth: '60vw',
             zIndex:1, transform:'rotate(90deg)', pointerEvents:'none',
-          }} />
+          }} /> */}
 
           {/* ════ HERO CARD ════ */}
           <div
