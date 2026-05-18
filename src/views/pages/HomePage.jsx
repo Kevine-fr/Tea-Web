@@ -756,28 +756,31 @@ export default function HomePage() {
                 height: isXSMobile ? 140 : isMobile ? 180 : isLaptop ? 220 : 265,
                 width:  isXSMobile ? 140 : isMobile ? 180 : isLaptop ? 220 : 265,
                 position:'relative', flexShrink:0,
+                borderRadius:'50%',
+                background:'#1a3c2e',
+                /* Liseré doré subtil (rappel du visuel d'origine) + ombre de profondeur */
+                boxShadow: `
+                  0 8px 24px rgba(0,0,0,0.18),
+                  inset 0 0 0 ${isMobile ? 5 : 7}px #1a3c2e,
+                  inset 0 0 0 ${isMobile ? 6 : 8}px rgba(218, 178, 95, 0.55)
+                `,
+                display:'flex', flexDirection:'column',
+                alignItems:'center', justifyContent:'center',
                 opacity: stepsVis ? 1 : 0,
                 transform: stepsVis ? 'scale(1)' : 'scale(0.78)',
                 transition:'opacity .55s ease, transform .6s cubic-bezier(.22,.68,0,1.2)',
               }}>
-                <img src="/images/Accueil/img_05.png" alt="" style={{ width:'100%', height:'100%', objectFit:'contain' }} />
-                <div style={{
-                  position:'absolute', inset:0,
-                  display:'flex', flexDirection:'column',
-                  alignItems:'center', justifyContent:'center',
-                }}>
-                  <span style={{
-                    fontFamily:"'Playfair Display',serif", fontStyle:'italic',
-                    color:'#fff',
-                    fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)',
-                    lineHeight:1,
-                  }}>100%</span>
-                  <span style={{
-                    fontFamily:"'Playfair Display',serif", fontStyle:'italic',
-                    color:'#fff',
-                    fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)',
-                  }}>Gagnant</span>
-                </div>
+                <span style={{
+                  fontFamily:"'Playfair Display',serif", fontStyle:'italic',
+                  color:'#fff',
+                  fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)',
+                  lineHeight:1,
+                }}>100%</span>
+                <span style={{
+                  fontFamily:"'Playfair Display',serif", fontStyle:'italic',
+                  color:'#fff',
+                  fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)',
+                }}>Gagnant</span>
               </div>
 
               <div style={{
