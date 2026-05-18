@@ -480,13 +480,23 @@ export default function HomePage() {
   }, [])
 
   /* ── Valeurs dérivées du breakpoint ── */
-  const heroMargin = isMobile
-    ? '1.25rem 1rem 0 1rem'
+  /* Gouttière horizontale unique pour TOUTES les sections de la page,
+     afin que la hero card et la section steps soient parfaitement alignées. */
+  const pageGutter = isMobile
+    ? '1rem'
     : isTablet
-      ? '2rem 1.5rem 0 1.5rem'
+      ? '1.5rem'
       : isLaptop
-        ? '2.5rem 4rem 0 4rem'
-        : '3rem clamp(4rem, 10vw, 10rem) 0 clamp(4rem, 10vw, 10rem)'
+        ? '4rem'
+        : 'clamp(4rem, 10vw, 10rem)'
+
+  const heroMargin = isMobile
+    ? `1.25rem ${pageGutter} 0 ${pageGutter}`
+    : isTablet
+      ? `2rem ${pageGutter} 0 ${pageGutter}`
+      : isLaptop
+        ? `2.5rem ${pageGutter} 0 ${pageGutter}`
+        : `3rem ${pageGutter} 0 ${pageGutter}`
 
   const heroPadding = isMobile
     ? '2rem 1.25rem'
@@ -539,7 +549,7 @@ export default function HomePage() {
             animation:'decoSpinR 30s linear infinite',
           }} />
 
-          <img className="home-leaf" src="/images/Accueil/img_09.png" alt="" style={{
+          {/* <img className="home-leaf" src="/images/Accueil/img_09.png" alt="" style={{
             position:'absolute', right:'5%', top:'-30%',
             width: isMobile ? '50%' : 'auto',
             maxWidth: '60vw',
@@ -550,7 +560,7 @@ export default function HomePage() {
             width: isMobile ? '50%' : 'auto',
             maxWidth: '60vw',
             zIndex:1, transform:'rotate(90deg)', pointerEvents:'none',
-          }} />
+          }} /> */}
 
           {/* ════ HERO CARD ════ */}
           <div
@@ -731,12 +741,10 @@ export default function HomePage() {
           <div ref={stepsRef} style={{
             position:'relative', zIndex:2,
             margin: isMobile
-              ? '1.5rem 1rem 0 1rem'
+              ? `1.5rem ${pageGutter} 0 ${pageGutter}`
               : isTablet
-                ? '2rem 1.5rem 0 1.5rem'
-                : isLaptop
-                  ? '2rem 4rem'
-                  : '0 clamp(4rem, 8vw, 8rem)',
+                ? `2rem ${pageGutter} 0 ${pageGutter}`
+                : `2rem ${pageGutter} 0 ${pageGutter}`,
             display:'flex',
             alignItems: isTablet ? 'stretch' : 'center',
             justifyContent: isTablet ? 'center' : 'flex-start',
@@ -753,31 +761,34 @@ export default function HomePage() {
               gap: isXSMobile ? '0.75rem' : 0,
             }}>
               <div className="home-hundred" style={{
-                height: isXSMobile ? 140 : isMobile ? 180 : isLaptop ? 220 : 265,
-                width:  isXSMobile ? 140 : isMobile ? 180 : isLaptop ? 220 : 265,
+                height: isXSMobile ? 70 : isMobile ? 90 : isLaptop ? 110 : 132,
+                width:  isXSMobile ? 70 : isMobile ? 90 : isLaptop ? 110 : 132,
                 position:'relative', flexShrink:0,
+                borderRadius:'50%',
+                background:'#1a3c2e',
+                /* Liseré doré subtil (rappel du visuel d'origine) + ombre de profondeur */
+                boxShadow: `
+                  0 4px 12px rgba(0,0,0,0.18),
+                  inset 0 0 0 ${isMobile ? 3 : 4}px #1a3c2e,
+                  inset 0 0 0 ${isMobile ? 4 : 5}px rgba(218, 178, 95, 0.55)
+                `,
+                display:'flex', flexDirection:'column',
+                alignItems:'center', justifyContent:'center',
                 opacity: stepsVis ? 1 : 0,
                 transform: stepsVis ? 'scale(1)' : 'scale(0.78)',
                 transition:'opacity .55s ease, transform .6s cubic-bezier(.22,.68,0,1.2)',
               }}>
-                <img src="/images/Accueil/img_05.png" alt="" style={{ width:'100%', height:'100%', objectFit:'contain' }} />
-                <div style={{
-                  position:'absolute', inset:0,
-                  display:'flex', flexDirection:'column',
-                  alignItems:'center', justifyContent:'center',
-                }}>
-                  <span style={{
-                    fontFamily:"'Playfair Display',serif", fontStyle:'italic',
-                    color:'#fff',
-                    fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)',
-                    lineHeight:1,
-                  }}>100%</span>
-                  <span style={{
-                    fontFamily:"'Playfair Display',serif", fontStyle:'italic',
-                    color:'#fff',
-                    fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)',
-                  }}>Gagnant</span>
-                </div>
+                <span style={{
+                  fontFamily:"'Playfair Display',serif", fontStyle:'italic',
+                  color:'#fff',
+                  fontSize: 'clamp(0.7rem, 1.25vw, 1.1rem)',
+                  lineHeight:1,
+                }}>100%</span>
+                <span style={{
+                  fontFamily:"'Playfair Display',serif", fontStyle:'italic',
+                  color:'#fff',
+                  fontSize: 'clamp(0.7rem, 1.25vw, 1.1rem)',
+                }}>Gagnant</span>
               </div>
 
               <div style={{
