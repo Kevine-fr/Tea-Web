@@ -753,16 +753,16 @@ export default function HomePage() {
               gap: isXSMobile ? '0.75rem' : 0,
             }}>
               <div className="home-hundred" style={{
-                height: isXSMobile ? 140 : isMobile ? 180 : isLaptop ? 220 : 265,
-                width:  isXSMobile ? 140 : isMobile ? 180 : isLaptop ? 220 : 265,
+                height: isXSMobile ? 70 : isMobile ? 90 : isLaptop ? 110 : 132,
+                width:  isXSMobile ? 70 : isMobile ? 90 : isLaptop ? 110 : 132,
                 position:'relative', flexShrink:0,
                 borderRadius:'50%',
                 background:'#1a3c2e',
                 /* Liseré doré subtil (rappel du visuel d'origine) + ombre de profondeur */
                 boxShadow: `
-                  0 8px 24px rgba(0,0,0,0.18),
-                  inset 0 0 0 ${isMobile ? 5 : 7}px #1a3c2e,
-                  inset 0 0 0 ${isMobile ? 6 : 8}px rgba(218, 178, 95, 0.55)
+                  0 4px 12px rgba(0,0,0,0.18),
+                  inset 0 0 0 ${isMobile ? 3 : 4}px #1a3c2e,
+                  inset 0 0 0 ${isMobile ? 4 : 5}px rgba(218, 178, 95, 0.55)
                 `,
                 display:'flex', flexDirection:'column',
                 alignItems:'center', justifyContent:'center',
@@ -773,13 +773,13 @@ export default function HomePage() {
                 <span style={{
                   fontFamily:"'Playfair Display',serif", fontStyle:'italic',
                   color:'#fff',
-                  fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)',
+                  fontSize: 'clamp(0.7rem, 1.25vw, 1.1rem)',
                   lineHeight:1,
                 }}>100%</span>
                 <span style={{
                   fontFamily:"'Playfair Display',serif", fontStyle:'italic',
                   color:'#fff',
-                  fontSize: 'clamp(1.35rem, 2.5vw, 2.2rem)',
+                  fontSize: 'clamp(0.7rem, 1.25vw, 1.1rem)',
                 }}>Gagnant</span>
               </div>
 
