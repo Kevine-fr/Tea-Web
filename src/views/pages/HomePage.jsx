@@ -718,11 +718,11 @@ export default function HomePage() {
             {/* ── Images flottantes — desktop uniquement (>1024px) ── */}
             {!isTablet && (
               <>
-                <img ref={steamRef} className="home-steam" src="/images/Accueil/img_10.png" alt="" style={{
+                {/* <img ref={steamRef} className="home-steam" src="/images/Accueil/img_10.png" alt="" style={{
                   position:'absolute', bottom:'50%', right:'14.5%',
                   width: isLaptop ? '10%' : '11.5%',
                   opacity:0, zIndex:6, pointerEvents:'none',
-                }} />
+                }} /> */}
                 <img ref={cupRef} className="home-cup" src="/images/Accueil/img_02.png" alt="" style={{
                   position:'absolute', bottom:'0%', right:'7.5%',
                   height: isLaptop ? '60%' : '70%',
