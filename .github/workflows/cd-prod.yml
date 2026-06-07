@@ -22,18 +22,28 @@ jobs:
       - name: Add VPS to known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
+          ssh-keyscan -p 22 -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+          if [ ! -s ~/.ssh/known_hosts ]; then
+            echo "ssh-keyscan n'a rien retourné — VPS_HOST injoignable ou secret vide"
+            exit 1
+          fi
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Deploy to Production VPS
         env:
           IMAGE_TAG: ${{ github.event.inputs.image_tag }}
         run: |
-          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash << EOF
+          ssh "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" bash -s << EOF
           set -e
-          cd /home/deploy/tea-app-web || exit 1
+          cd "${{ secrets.PATH_DIR_MAIN }}" || { echo "Dossier ${{ secrets.PATH_DIR_MAIN }} introuvable"; exit 1; }
 
           echo "Mise a jour du code..."
-          git fetch origin
+          if [ ! -d .git ]; then
+            echo "Pas de dépôt git ici — git reset impossible. Vérifie que le repo est cloné dans ce dossier."
+            exit 1
+          fi
+          git fetch origin --prune
           git reset --hard origin/main
 
           echo "Generation du .env..."
@@ -48,7 +58,7 @@ jobs:
           IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.prod.yml up -d --remove-orphans --force-recreate
 
           timeout 30 bash -c 'until docker ps | grep -q tea-web; do sleep 2; done' \
-            || (echo "Container React non demarre" && exit 1)
+            || { echo "Container React non demarre"; exit 1; }
 
           docker image prune -f
           echo "Frontend prod deploye : zstin4/tea-web:${IMAGE_TAG}"
