@@ -1,7 +1,7 @@
 services:
   react_app:
     image: zstin4/tea-web:${IMAGE_TAG}
-    container_name: tea-web
+    container_name: tea-web-main
     restart: always
     expose:
       - "80"
