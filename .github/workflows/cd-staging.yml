@@ -55,7 +55,7 @@ jobs:
           docker pull zstin4/tea-web:${IMAGE_TAG}
 
           echo "Demarrage du container..."
-          IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.staging.yml up -d --remove-orphans --force-recreate
+          IMAGE_TAG=${IMAGE_TAG} docker compose -p tea-web-staging -f docker-compose.staging.yml up -d --remove-orphans --force-recreate
 
           timeout 30 bash -c 'until docker ps | grep -q tea-web-staging; do sleep 2; done' \
             || { echo "Container React staging non demarre"; exit 1; }
