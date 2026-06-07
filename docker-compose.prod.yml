@@ -1,14 +1,14 @@
 services:
   react_app:
     image: zstin4/tea-web:${IMAGE_TAG}
-    container_name: tea_web
+    container_name: tea-web-main
     restart: always
     expose:
       - "80"
     networks:
-      - backend
+      - web
 
 networks:
-  backend:
+  web:
     external: true
-    name: backend
+    name: web

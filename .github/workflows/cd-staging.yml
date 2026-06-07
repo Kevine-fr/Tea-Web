@@ -22,18 +22,28 @@ jobs:
       - name: Add VPS to known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
+          ssh-keyscan -p 22 -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+          if [ ! -s ~/.ssh/known_hosts ]; then
+            echo "ssh-keyscan n'a rien retourné — VPS_HOST injoignable ou secret vide"
+            exit 1
+          fi
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Deploy to Staging VPS
         env:
           IMAGE_TAG: ${{ github.event.inputs.image_tag }}
         run: |
-          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash << EOF
+          ssh "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" bash -s << EOF
           set -e
-          cd /home/deploy/tea-app-web-staging || exit 1
+          cd "${{ secrets.PATH_DIR_STAGING }}" || { echo "Dossier ${{ secrets.PATH_DIR_STAGING }} introuvable"; exit 1; }
 
           echo "Mise a jour du code..."
-          git fetch origin
+          if [ ! -d .git ]; then
+            echo "Pas de dépôt git ici — git reset impossible. Vérifie que le repo est cloné dans ce dossier."
+            exit 1
+          fi
+          git fetch origin --prune
           git reset --hard origin/staging
 
           echo "Generation du .env..."
@@ -47,8 +57,8 @@ jobs:
           echo "Demarrage du container..."
           IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.staging.yml up -d --remove-orphans --force-recreate
 
-          timeout 30 bash -c 'until docker ps | grep -q tea_web_staging; do sleep 2; done' \
-            || (echo "Container React staging non demarre" && exit 1)
+          timeout 30 bash -c 'until docker ps | grep -q tea-web-staging; do sleep 2; done' \
+            || { echo "Container React staging non demarre"; exit 1; }
 
           docker image prune -f
           echo "Frontend staging deploye : zstin4/tea-web:${IMAGE_TAG}"
