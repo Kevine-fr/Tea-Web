@@ -7,7 +7,7 @@ pipeline {
   }
 
   environment {
-    DOCKER_IMAGE = credentials('docker-image-web')
+    DOCKER_IMAGE = credentials('docker-image-tea-web')
     NOTIFY_EMAIL = credentials('notify-email')
   }
   
@@ -20,7 +20,7 @@ pipeline {
       agent {
         dockerfile {
           filename 'Dockerfile.ci'
-          args '--network backend'
+          args '--network web'
           additionalBuildArgs '--no-cache'
         }
       }
@@ -34,7 +34,7 @@ pipeline {
       agent {
         dockerfile {
           filename 'Dockerfile.ci'
-          args '--network backend'
+          args '--network web'
         }
       }
       steps {
@@ -49,7 +49,7 @@ pipeline {
       agent {
         dockerfile {
           filename 'Dockerfile.ci'
-          args '--network backend'
+          args '--network web'
         }
       }
       steps {
@@ -74,10 +74,10 @@ pipeline {
       }
       steps {
         sh '''
-          SONAR_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' sonarqube_tea)
-          JENKINS_CONTAINER=$(docker inspect --format="{{.Id}}" jenkins_tea)
+          SONAR_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' sonarqube)
+          JENKINS_CONTAINER=$(docker inspect --format="{{.Id}}" jenkins)
           docker run --rm \
-            --network backend \
+            --network web \
             --volumes-from ${JENKINS_CONTAINER} \
             -w $(pwd) \
             -e SONAR_TOKEN=${SONAR_TOKEN} \
@@ -105,7 +105,7 @@ pipeline {
       agent {
         dockerfile {
           filename 'Dockerfile.ci'
-          args '--network backend'
+          args '--network web'
         }
       }
       steps {
@@ -132,7 +132,7 @@ pipeline {
       agent {
         dockerfile {
           filename 'Dockerfile.ci'
-          args '--network backend'
+          args '--network web'
         }
       }
       steps {
