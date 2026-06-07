@@ -55,7 +55,7 @@ jobs:
           docker pull zstin4/tea-web:${IMAGE_TAG}
 
           echo "Demarrage du container..."
-          IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.prod.yml up -d --remove-orphans --force-recreate
+          IMAGE_TAG=${IMAGE_TAG} docker compose -p tea-web-main -f docker-compose.prod.yml up -d --remove-orphans --force-recreate
 
           timeout 30 bash -c 'until docker ps | grep -q tea-web; do sleep 2; done' \
             || { echo "Container React non demarre"; exit 1; }
