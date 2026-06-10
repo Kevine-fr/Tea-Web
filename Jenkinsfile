@@ -74,6 +74,25 @@ pipeline {
       }
       steps {
         sh '''
+          set -e
+
+          echo "→ Démarrage de SonarQube si nécessaire..."
+          docker start sonarqube-db sonarqube >/dev/null
+
+          echo "→ Attente de la disponibilité de SonarQube..."
+          i=0
+          until docker run --rm --network web busybox:latest \
+                  wget -q -O - "http://sonarqube:9000/api/system/status" 2>/dev/null \
+                  | grep -q '"status":"UP"'; do
+            i=$((i + 1))
+            if [ "$i" -ge 60 ]; then
+              echo "✖ SonarQube n'est pas devenu disponible à temps."
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "✓ SonarQube est prêt."
+
           SONAR_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' sonarqube)
           JENKINS_CONTAINER=$(docker inspect --format="{{.Id}}" jenkins)
           docker run --rm \
@@ -95,6 +114,12 @@ pipeline {
               -Dsonar.host.url=http://${SONAR_IP}:9000 \
               -Dsonar.token=${SONAR_TOKEN}
         '''
+      }
+      post {
+        always {
+          echo '→ Extinction de SonarQube pour libérer la RAM...'
+          sh 'docker stop sonarqube sonarqube-db >/dev/null 2>&1 || true'
+        }
       }
     }
 
